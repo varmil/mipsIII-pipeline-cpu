@@ -1,4 +1,4 @@
-module alu #(parameter N =8) (
+module alu #(parameter N = 32) (
   input logic [N-1:0] A, B,
   input logic [2:0] F,
   output logic [N-1:0] Y,
@@ -18,7 +18,7 @@ module alu #(parameter N =8) (
       2'b00: Y = A & BSelected;
       2'b01: Y = A | BSelected;
       2'b10: Y = S;
-      2'b11: Y = { {31{1'b0}}, S[N-1] };
+      2'b11: Y = { {(N-1){1'b0}}, S[N-1] };
       default: Y = 'X;
     endcase
   end
