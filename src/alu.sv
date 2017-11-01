@@ -1,9 +1,10 @@
-module alu #(parameter N =8)
-            (input logic [N-1:0] A, B,
-             input logic [2:0] F,
-             output logic [N-1:0] Y,
-             output logic Cout,
-             output logic ZeroFlag);
+module alu #(parameter N =8) (
+  input logic [N-1:0] A, B,
+  input logic [2:0] F,
+  output logic [N-1:0] Y,
+  output logic Cout,
+  output logic ZeroFlag
+);
 
   logic [N-1:0] BSelected;
   logic [N-1:0] S;
