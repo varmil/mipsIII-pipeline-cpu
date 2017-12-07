@@ -29,8 +29,6 @@ module controller (
 
   `include "parameters.sv"
 
-
-
   reg [15:0] Datapath;
   assign PCSrc         = Datapath[14];
   assign Link          = Datapath[13];
