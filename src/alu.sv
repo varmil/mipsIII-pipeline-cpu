@@ -63,8 +63,8 @@ module alu (
        `AluOp_Sll   : Result <= B << Shamt;
        `AluOp_Sllc  : Result <= {B[15:0], 16'b0};
        `AluOp_Sllv  : Result <= B << A[4:0];
-       `AluOp_Slt   : Result <= (As < Bs) ? 32'h0000_0001 : 32'h00000000;
-       `AluOp_Sltu  : Result <= (A < B)   ? 32'h0000_0001 : 32'h00000000;
+       `AluOp_Slt   : Result <= (As < Bs) ? 32'h0000_0001 : 32'h0000_0000;
+       `AluOp_Sltu  : Result <= (A < B)   ? 32'h0000_0001 : 32'h0000_0000;
        `AluOp_Sra   : Result <= Bs >>> Shamt;
        `AluOp_Srav  : Result <= Bs >>> As[4:0];
        `AluOp_Srl   : Result <= B >> Shamt;
