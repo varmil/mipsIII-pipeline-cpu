@@ -77,8 +77,8 @@ module core (
 
 
   /*** block modules ***/
-  program_counter #(.N(32), .INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
-  register_file #(32) register_file(
+  program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
+  register_file register_file(
     CLK, RegWrite,
     // read reg num1, 2, write reg num
     Rs, Rt, RegDstOut,
