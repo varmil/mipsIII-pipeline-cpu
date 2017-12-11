@@ -18,6 +18,7 @@ module core (
 
   /*** Constant ***/
   `define PCIncrAmt   4
+  `define PCInit      0
 
   /*** parse instruction ***/
   logic [5:0]  OpCode    = Instr[31:26];
@@ -74,8 +75,8 @@ module core (
 
 
   /*** blocks ***/
-  program_counter program_counter(CLK, PCSrcOut, PC);
-  register_file register_file(
+  program_counter #(.N(32), .INIT(PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
+  register_file #(32) register_file(
     CLK, RegWrite,
     // read reg num1, 2, write reg num
     Rs, Rt, RegDstOut,

@@ -12,13 +12,6 @@ module board (
   logic [31:0] ReadData;
   logic MemRead, MemWrite;
 
-  always @ (negedge RST) begin
-    if (RST) begin
-      // Reset Vector
-      PC <= 0;
-    end
-  end
-
   core core(
     CLK, RST,
     Instr,
