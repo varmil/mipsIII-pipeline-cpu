@@ -1,37 +1,10 @@
-// module alu #(parameter N = 32) (
-//   input logic [N-1:0] A, B,
-//   input logic [2:0] F,
-//
-//   output logic [N-1:0] Y,
-//   output logic Cout,
-//   output logic ZeroFlag
-// );
-//
-//   logic [N-1:0] BSelected;
-//   logic [N-1:0] S;
-//
-//   assign BSelected = (F[2]) ? ~B : B;
-//   assign {Cout, S} = A + BSelected;
-//   assign ZeroFlag = Y == '0;
-//
-//   always @(*) begin
-//     case (F[1:0])
-//       2'b00: Y = A & BSelected;
-//       2'b01: Y = A | BSelected;
-//       2'b10: Y = S;
-//       2'b11: Y = { {(N-1){1'b0}}, S[N-1] };
-//       default: Y = 'X;
-//     endcase
-//   end
-// endmodule // alu
-
 module alu (
   input logic [4:0] Operation,
   input logic signed [4:0] Shamt,
   input logic [31:0] A, B,
 
-  output logic signed [31:0] Result,
-  output logic ZeroFlag
+  output logic signed [31:0] Result
+  // output logic ZeroFlag
 );
 
   `include "parameters.sv"
@@ -46,7 +19,7 @@ module alu (
   assign As = A;
   assign Bs = B;
 
-  assign ZeroFlag = Result == '0;
+  // assign ZeroFlag = Result == '0;
 
   always @(*) begin
      case (Operation)

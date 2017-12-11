@@ -7,9 +7,9 @@ module controller (
 
 
   // Datapath output
-  output logic PCSrc         ,
+  output logic [1:0] PCSrc   ,
   output logic Link          ,
-  output logic ALUSrcImm     ,
+  output logic ALUSrc        ,
   output logic Movc          ,
   output logic Trap          ,
   output logic TrapCond      ,
@@ -30,9 +30,10 @@ module controller (
   `include "parameters.sv"
 
   reg [15:0] Datapath;
-  assign PCSrc         = Datapath[14];
+  assign PCSrc[1]      = Datapath[15];
+  assign PCSrc[0]      = Datapath[14];
   assign Link          = Datapath[13];
-  assign ALUSrcImm     = Datapath[12];
+  assign ALUSrc        = Datapath[12];
   assign Movc          = Datapath[11];
   assign Trap          = Datapath[10];
   assign TrapCond      = Datapath[9];
@@ -45,9 +46,6 @@ module controller (
   assign MemSignExtend = Datapath[2];
   assign RegWrite      = Datapath[1];
   assign MemtoReg      = Datapath[0];
-
-  // logic [7:0] Datapath;
-  // assign { regDst, aluSrc, branch, memWrite, MemByte, MemSignExtend, RegWrite, MemtoReg } = Datapath;
 
   /*** Datapath ***
        Bit  Name          Description
