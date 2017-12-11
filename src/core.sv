@@ -21,61 +21,63 @@ module core (
   `define PCInit      0
 
   /*** parse instruction ***/
-  logic [5:0]  OpCode    = Instr[31:26];
-  logic [4:0]  Rs        = Instr[25:21];
-  logic [4:0]  Rt        = Instr[20:16];
-  logic [4:0]  Rd        = Instr[15:11];
-  logic [5:0]  Funct     = Instr[5:0];
-  logic [15:0] Immediate = Instr[15:0];
-  logic [4:0]  Shamt     = Instr[10:6];
+  wire [31:0] Instruction;
+  wire [5:0]  OpCode      = Instruction[31:26];
+  wire [4:0]  Rs          = Instruction[25:21];
+  wire [4:0]  Rt          = Instruction[20:16];
+  wire [4:0]  Rd          = Instruction[15:11];
+  wire [5:0]  Funct       = Instruction[5:0];
+  wire [15:0] Immediate   = Instruction[15:0];
+  wire [25:0] JumpAddress = Instruction[25:0];
+  wire [4:0]  Shamt       = Instruction[10:6];
 
   /*** Datapath ***/
-  logic [1:0] PCSrc   ;
-  logic Link          ;
-  logic ALUSrc        ;
-  logic Movc          ;
-  logic Trap          ;
-  logic TrapCond      ;
-  logic RegDst        ;
-  logic LLSC          ;
-  // logic MemRead       ;
-  // logic MemWrite      ;
-  logic MemHalf       ;
-  logic MemByte       ;
-  logic MemSignExtend ;
-  logic RegWrite      ;
-  logic MemtoReg      ;
+  wire [1:0] PCSrc   ;
+  wire Link          ;
+  wire ALUSrc        ;
+  wire Movc          ;
+  wire Trap          ;
+  wire TrapCond      ;
+  wire RegDst        ;
+  wire LLSC          ;
+  // wire MemRead       ;
+  // wire MemWrite      ;
+  wire MemHalf       ;
+  wire MemByte       ;
+  wire MemSignExtend ;
+  wire RegWrite      ;
+  wire MemtoReg      ;
 
   /*** ALU Operations ***/
-  logic [4:0]  ALUOp;
-  logic [31:0] ALUResult;
+  wire [4:0]  ALUOp;
+  wire [31:0] ALUResult;
 
   /*** Register File ***/
-  logic [31:0] RegReadData1;
-  logic [31:0] RegReadData2;
+  wire [31:0] RegReadData1;
+  wire [31:0] RegReadData2;
+
+  /*** for branch operations ***/
+  wire CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
 
   /*** internal signals ***/
-  logic [31:0] PCPlus4Out;
-  logic [31:0] PCBranchOut;
-  logic [31:0] PCSrcOut;
-  logic [4:0]  RegDstOut;
-  logic [31:0] MemtoRegOut;
-  logic [31:0] ExtImmOut;
-  logic [31:0] SL2ForPCBranchOut;
-  logic [31:0] ALUSrcOut;
+  wire [31:0] PCPlus4Out;
+  wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
+  wire [31:0] PCBranchOut;
+  wire [31:0] PCSrcOut;
+  wire [4:0]  RegDstOut;
+  wire [31:0] MemtoRegOut;
+  wire [31:0] ExtImmOut;
+  wire [31:0] SL2ForPCBranchOut;
+  wire [31:0] ALUSrcOut;
 
-
-
-
-  /*** assignment for memory ***/
+  /*** assignment ***/
+  assign Instruction = Instr;
   assign ALUOut = ALUResult;
   assign WriteData = RegReadData2;
 
 
-
-
-  /*** blocks ***/
-  program_counter #(.N(32), .INIT(PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
+  /*** block modules ***/
+  program_counter #(.N(32), .INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
   register_file #(32) register_file(
     CLK, RegWrite,
     // read reg num1, 2, write reg num
@@ -95,6 +97,8 @@ module core (
   controller controller(
     // instruction input
     OpCode, Funct, Rs, Rt,
+    // branch condition input
+    CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ,
     // Datapath output
     PCSrc         ,
     Link          ,
@@ -114,17 +118,25 @@ module core (
     // ALU Operations output
     ALUOp
   );
-
-
+  /*** Condition Compare Unit ***/
+  Compare Compare (
+    .A    (RegReadData1),
+    .B    (RegReadData2),
+    .EQ   (CmpEQ),
+    .GZ   (CmpGZ),
+    .LZ   (CmpLZ),
+    .GEZ  (CmpGEZ),
+    .LEZ  (CmpLEZ)
+  );
 
 
   /*** common modules ***/
-  mux2 #(32) pc_src(PCPlus4Out, PCBranchOut, PCSrc[0], PCSrcOut);
+  mux4 #(32) pc_src(PCPlus4Out, PCJumpAddress, PCBranchOut, RegReadData1, PCSrc, PCSrcOut);
   mux2 #(5)  reg_dst(Rt, Rd, RegDst, RegDstOut);
   mux2 #(32) alu_src(RegReadData2, ExtImmOut, ALUSrc, ALUSrcOut);
   mux2 #(32) mem_to_reg(ALUResult, ReadData, MemtoReg, MemtoRegOut);
 
-  adder #(32) pc_plus4(PC, PCIncrAmt, PCPlus4Out);
+  adder #(32) pc_plus4(PC, `PCIncrAmt, PCPlus4Out);
   adder #(32) pc_branch(PCPlus4Out, SL2ForPCBranchOut, PCBranchOut);
 
   sign_extender ext_imm(Immediate, ExtImmOut);

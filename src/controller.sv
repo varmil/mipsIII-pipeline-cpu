@@ -5,6 +5,12 @@ module controller (
   input logic [4:0] Rs,        // used to differentiate mfc0 and mtc0
   input logic [4:0] Rt,        // used to differentiate bgez,bgezal,bltz,bltzal,teqi,tgei,tgeiu,tlti,tltiu,tnei
 
+  // Branch
+  input  Cmp_EQ,
+  input  Cmp_GZ,
+  input  Cmp_GEZ,
+  input  Cmp_LZ,
+  input  Cmp_LEZ,
 
   // Datapath output
   output logic [1:0] PCSrc   ,
@@ -30,7 +36,6 @@ module controller (
   `include "parameters.sv"
 
   reg [15:0] Datapath;
-  assign PCSrc[1]      = Datapath[15];
   assign PCSrc[0]      = Datapath[14];
   assign Link          = Datapath[13];
   assign ALUSrc        = Datapath[12];
@@ -300,5 +305,25 @@ module controller (
           endcase
       // end
   end
+
+  /***
+   These remaining options cover portions of the datapath that are not
+   controlled directly by the datapath bits. Note that some refer to bits of
+   the opcode or other fields, which breaks the otherwise fully-abstracted view
+   of instruction encodings. Make sure when adding custom instructions that
+   no false positives/negatives are generated here.
+   ***/
+
+  // Branch Detection: Options are mutually exclusive.
+  assign Branch_EQ  =  OpCode[2] & ~OpCode[1] & ~OpCode[0] &  Cmp_EQ;
+  assign Branch_GTZ =  OpCode[2] &  OpCode[1] &  OpCode[0] &  Cmp_GZ;
+  assign Branch_LEZ =  OpCode[2] &  OpCode[1] & ~OpCode[0] &  Cmp_LEZ;
+  assign Branch_NEQ =  OpCode[2] & ~OpCode[1] &  OpCode[0] & ~Cmp_EQ;
+  assign Branch_GEZ = ~OpCode[2] &  Rt[0] & Cmp_GEZ;
+  assign Branch_LTZ = ~OpCode[2] & ~Rt[0] & Cmp_LZ;
+  assign Branch = Branch_EQ | Branch_GTZ | Branch_LEZ | Branch_NEQ | Branch_GEZ | Branch_LTZ;
+  assign PCSrc[1] = (Datapath[15] & ~Datapath[14]) ? Branch : Datapath[15];
+
+
 
 endmodule
