@@ -5,6 +5,7 @@ module data_memory #(parameter N = 32) (
   input logic writeEnable,
   output logic [N - 1:0] readData
 );
+
   logic [N -1:0] RAM [63:0];
 
   assign readData = RAM[address];

@@ -26,6 +26,7 @@ module core (
   logic [4:0]  Rd        = Instr[15:11];
   logic [5:0]  Funct     = Instr[5:0];
   logic [15:0] Immediate = Instr[15:0];
+  logic [4:0]  Shamt     = Instr[10:6];
 
   /*** Datapath ***/
   logic [1:0] PCSrc   ;
@@ -46,7 +47,6 @@ module core (
 
   /*** ALU Operations ***/
   logic [4:0]  ALUOp;
-  logic [4:0]  Shamt;
   logic [31:0] ALUResult;
 
   /*** Register File ***/
