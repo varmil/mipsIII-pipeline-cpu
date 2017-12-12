@@ -11,7 +11,7 @@ module instruction_memory #(parameter WIDTH = 32) (
   assign addressBlock = address / ADDRESS_DIV;
 
   initial begin
-    $readmemh("src/memfile.dat", RAM);
+    $readmemh("testcase/logic/logic.data", RAM);
   end
 
   assign ir = RAM[addressBlock];

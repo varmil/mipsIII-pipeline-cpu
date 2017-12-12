@@ -31,6 +31,14 @@ module core (
   wire [25:0] JumpAddress = Instruction[25:0];
   wire [4:0]  Shamt       = Instruction[10:6];
 
+  /*** Controller ***/
+  wire SignExtend    ;
+  wire Movn          ;
+  wire Movz          ;
+  wire Mfc0          ;
+  wire Mtc0          ;
+  wire Eret          ;
+
   /*** Datapath ***/
   wire [1:0] PCSrc   ;
   wire Link          ;
@@ -61,7 +69,6 @@ module core (
 
   /*** internal signals ***/
   wire [31:0] PCPlus4Out;
-  wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
   wire [31:0] PCBranchOut;
   wire [31:0] PCSrcOut;
   wire [4:0]  RegDstOut;
@@ -69,6 +76,9 @@ module core (
   wire [31:0] ExtImmOut;
   wire [31:0] SL2ForPCBranchOut;
   wire [31:0] ALUSrcOut;
+
+  /*** concat wire ***/
+  wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
 
   /*** assignment ***/
   assign Instruction = Instr;
@@ -99,6 +109,14 @@ module core (
     OpCode, Funct, Rs, Rt,
     // branch condition input
     CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ,
+
+    // some logic operation output
+    SignExtend,
+    Movn,
+    Movz,
+    Mfc0,
+    Mtc0,
+    Eret,
     // Datapath output
     PCSrc         ,
     Link          ,
@@ -139,7 +157,7 @@ module core (
   adder #(32) pc_plus4(PC, `PCIncrAmt, PCPlus4Out);
   adder #(32) pc_branch(PCPlus4Out, SL2ForPCBranchOut, PCBranchOut);
 
-  sign_extender ext_imm(Immediate, ExtImmOut);
+  sign_or_zero_extender ext_imm(Immediate, SignExtend, ExtImmOut);
   sl2 sl2_for_pc_branch(ExtImmOut, SL2ForPCBranchOut);
 
 endmodule

@@ -12,6 +12,14 @@ module controller (
   input  Cmp_LZ,
   input  Cmp_LEZ,
 
+  // for some specific operations output
+  output logic SignExtend,
+  output logic Movn,
+  output logic Movz,
+  output logic Mfc0,
+  output logic Mtc0,
+  output logic Eret,
+
   // Datapath output
   output logic [1:0] PCSrc   ,
   output logic Link          ,
@@ -324,6 +332,21 @@ module controller (
   assign Branch = Branch_EQ | Branch_GTZ | Branch_LEZ | Branch_NEQ | Branch_GEZ | Branch_LTZ;
   assign PCSrc[1] = (Datapath[15] & ~Datapath[14]) ? Branch : Datapath[15];
 
+
+
+
+  // Sign- or Zero-Extension Control. The only ops that require zero-extension are
+  // Andi, Ori, and Xori. The following also zero-extends 'lui', however it does not alter the effect of lui.
+  assign SignExtend = (OpCode[5:2] != 4'b0011);
+
+  // Move Conditional
+  assign Movn = Movc &  Funct[0];
+  assign Movz = Movc & ~Funct[0];
+
+  // Coprocessor 0 (Mfc0, Mtc0) control signals.
+  assign Mfc0 = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_MF));
+  assign Mtc0 = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_MT));
+  assign Eret = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_ERET) && (Funct == `Funct_ERET));
 
 
 endmodule
