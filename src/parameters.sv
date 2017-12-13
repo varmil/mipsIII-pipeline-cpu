@@ -82,11 +82,11 @@
 `define Op_Bltzal   `Op_Type_BI
 `define Op_Bne      6'b00_0101
 `define Op_Break    `Op_Type_R
-`define Op_Clo      `Op_Type_R2
-`define Op_Clz      `Op_Type_R2
+// `define Op_Clo      `Op_Type_R2
+// `define Op_Clz      `Op_Type_R2
 `define Op_Div      `Op_Type_R
 `define Op_Divu     `Op_Type_R
-`define Op_Eret     `Op_Type_CP0
+`define Op_Eret     `Op_Type_CP0 // MIPS 3
 `define Op_J        6'b00_0010
 `define Op_Jal      6'b00_0011
 `define Op_Jalr     `Op_Type_R
@@ -100,15 +100,15 @@
 `define Op_Lw       6'b10_0011
 `define Op_Lwl      6'b10_0010
 `define Op_Lwr      6'b10_0110
-`define Op_Madd     `Op_Type_R2
-`define Op_Maddu    `Op_Type_R2
+// `define Op_Madd     `Op_Type_R2
+// `define Op_Maddu    `Op_Type_R2
 `define Op_Mfc0     `Op_Type_CP0
 `define Op_Mfhi     `Op_Type_R
 `define Op_Mflo     `Op_Type_R
-`define Op_Movn     `Op_Type_R
-`define Op_Movz     `Op_Type_R
-`define Op_Msub     `Op_Type_R2
-`define Op_Msubu    `Op_Type_R2
+// `define Op_Movn     `Op_Type_R
+// `define Op_Movz     `Op_Type_R
+// `define Op_Msub     `Op_Type_R2
+// `define Op_Msubu    `Op_Type_R2
 `define Op_Mtc0     `Op_Type_CP0
 `define Op_Mthi     `Op_Type_R
 `define Op_Mtlo     `Op_Type_R
@@ -118,9 +118,9 @@
 `define Op_Nor      `Op_Type_R
 `define Op_Or       `Op_Type_R
 `define Op_Ori      6'b00_1101
-`define Op_Pref     6'b11_0011  // Prefetch does nothing in this implementation.
+// `define Op_Pref     6'b11_0011  // Prefetch does nothing in this implementation.
 `define Op_Sb       6'b10_1000
-`define Op_Sc       6'b11_1000
+`define Op_Sc       6'b11_1000  // Store Conditional Word (MIPS 2)
 `define Op_Sh       6'b10_1001
 `define Op_Sll      `Op_Type_R
 `define Op_Sllv     `Op_Type_R
@@ -138,6 +138,7 @@
 `define Op_Swl      6'b10_1010
 `define Op_Swr      6'b10_1110
 `define Op_Syscall  `Op_Type_R
+// MIPS 2 ----------
 `define Op_Teq      `Op_Type_R
 `define Op_Teqi     `Op_Type_BI
 `define Op_Tge      `Op_Type_R
@@ -150,6 +151,7 @@
 `define Op_Tltu     `Op_Type_R
 `define Op_Tne      `Op_Type_R
 `define Op_Tnei     `Op_Type_BI
+// ----------
 `define Op_Xor      `Op_Type_R
 `define Op_Xori     6'b00_1110
 
