@@ -51,7 +51,7 @@
      endianness. A processor in user mode may switch to reverse endianness, which will be
      the opposite of this `define.
 */
-`define Big_Endian 1'b1
+`define Big_Endian 1'b0
 
 
 
