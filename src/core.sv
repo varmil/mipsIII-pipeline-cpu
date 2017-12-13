@@ -146,6 +146,35 @@ module core (
     .GEZ  (CmpGEZ),
     .LEZ  (CmpLEZ)
   );
+  /*** TODO: Data Memory Controller ***/
+  memory_controller data_memory_controller (
+    .CLK           (CLK),
+    .RST           (RST),
+    // .DataIn        (M_WriteData_Pre),
+    // .Address       (M_ALUResult),
+    // .MReadData     (DataMem_In),
+    .MemRead       (MemRead),
+    .MemWrite      (MemWrite),
+    // .DataMem_Ack   (DataMem_Ack),
+    .Byte          (MemByte),
+    .Half          (MemHalf),
+    .SignExtend    (MemSignExtend),
+    // .KernelMode    (M_KernelMode),
+    // .ReverseEndian (M_ReverseEndian),
+    // .LLSC          (M_LLSC),
+    // .ERET          (ID_Eret),
+    // .Left          (M_Left),
+    // .Right         (M_Right),
+    // .M_Exception_Stall (M_Exception_Stall),
+    // .IF_Stall      (IF_Stall),
+    // .DataOut       (M_MemReadData),
+    // .MWriteData    (DataMem_Out),
+    // .WriteEnable   (DataMem_Write),
+    // .ReadEnable    (DataMem_Read),
+    // .M_Stall       (M_Stall_Controller),
+    // .EXC_AdEL      (M_EXC_AdEL),
+    // .EXC_AdES      (M_EXC_AdES)
+  );
 
 
   /*** common modules ***/

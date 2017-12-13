@@ -1,3 +1,5 @@
+// NOTE: 2017/12/13 not implement LWL, LWR, SWL, SWR
+
 /*
  * Description:
  *   A Data Memory Controller which handles all read and write requests from the
@@ -7,8 +9,8 @@
  *   is one bit and the write command is 4 bits, one for each byte in the 32-bit word.
  */
 module memory_controller(
-    input  clock,
-    input  reset,
+    input  CLK,
+    input  RST,
     input  [31:0] DataIn,           // Data from CPU
     input  [31:0] Address,          // From CPU
     input  [31:0] MReadData,        // Data from Memory
@@ -19,20 +21,20 @@ module memory_controller(
     input  Half,                    // Load/Store is Half (16-bit)
     input  SignExtend,              // Sub-word load should be sign extended
     input  KernelMode,              // (Exception logic)
-    input  ReverseEndian,           // Reverse Endian Memory for User Mode
+    // input  ReverseEndian,           // Reverse Endian Memory for User Mode
     input  LLSC,                    // (LLSC logic)
     input  ERET,                    // (LLSC logic)
-    input  Left,                    // Unaligned Load/Store Word Left
-    input  Right,                   // Unaligned Load/Store Word Right
+    // input  Left,                    // Unaligned Load/Store Word Left
+    // input  Right,                   // Unaligned Load/Store Word Right
     input  M_Exception_Stall,
     input  IF_Stall,                // XXX Clean this up between this module and HAZ/FWD
     output reg [31:0] DataOut,      // Data to CPU
     output [31:0] MWriteData,       // Data to Memory
     output reg [3:0] WriteEnable,   // Write Enable to Memory for each of 4 bytes of Memory
-    output ReadEnable,              // Read Enable to Memory
-    output M_Stall,
-    output EXC_AdEL,                // Load Exception
-    output EXC_AdES                 // Store Exception
+    output ReadEnable,               // Read Enable to Memory
+    output M_Stall
+    // output EXC_AdEL,                // Load Exception
+    // output EXC_AdES                 // Store Exception
 );
 
     `include "parameters.sv"
@@ -40,18 +42,21 @@ module memory_controller(
     /*** Reverse Endian Mode
          Normal memory accesses in the processor are Big Endian. The endianness can be reversed
          to Little Endian in User Mode only.
+
+         2017/12/13 We always use Little Endian mode
     */
-    wire BE = KernelMode | ~ReverseEndian;
+    // wire BE = KernelMode | ~ReverseEndian;
+    wire BE = 0;
 
     /*** Indicator that the current memory reference must be word-aligned ***/
-    wire Word = ~(Half | Byte | Left | Right);
+    wire Word = ~(Half | Byte /*| Left | Right*/);
 
     // Exception Detection
     wire EXC_KernelMem = ~KernelMode & (Address < `UMem_Lower);
     wire EXC_Word = Word & (Address[1] | Address[0]);
     wire EXC_Half = Half & Address[0];
-    assign EXC_AdEL = MemRead  & (EXC_KernelMem | EXC_Word | EXC_Half);
-    assign EXC_AdES = MemWrite & (EXC_KernelMem | EXC_Word | EXC_Half);
+    // assign EXC_AdEL = MemRead  & (EXC_KernelMem | EXC_Word | EXC_Half);
+    // assign EXC_AdES = MemWrite & (EXC_KernelMem | EXC_Word | EXC_Half);
 
     /*** Load Linked and Store Conditional logic ***
 
@@ -81,12 +86,12 @@ module memory_controller(
     reg  LLSC_Atomic;
     wire LLSC_MemWrite_Mask;
 
-    always @(posedge clock) begin
-        LLSC_Address <= (reset) ? 30'b0 : (MemRead & LLSC) ? Address[31:2] : LLSC_Address;
+    always @(posedge CLK) begin
+        LLSC_Address <= (RST) ? 30'b0 : (MemRead & LLSC) ? Address[31:2] : LLSC_Address;
     end
 
-    always @(posedge clock) begin
-        if (reset) begin
+    always @(posedge CLK) begin
+        if (RST) begin
             LLSC_Atomic <= 1'b0;
         end
         else if (MemRead) begin
@@ -105,8 +110,8 @@ module memory_controller(
     wire ReadCondition  = MemRead  & ~(EXC_KernelMem | EXC_Word | EXC_Half);
 
     reg RW_Mask;
-    always @(posedge clock) begin
-        RW_Mask <= (reset) ? 1'b0 : (((MemWrite | MemRead) & DataMem_Ack) ? 1'b1 : ((~M_Stall & ~IF_Stall) ? 1'b0 : RW_Mask));
+    always @(posedge CLK) begin
+        RW_Mask <= (RST) ? 1'b0 : (((MemWrite | MemRead) & DataMem_Ack) ? 1'b1 : ((~M_Stall & ~IF_Stall) ? 1'b0 : RW_Mask));
     end
     assign M_Stall = ReadEnable | (WriteEnable != 4'b0000) | DataMem_Ack | M_Exception_Stall;
     assign ReadEnable  = ReadCondition  & ~RW_Mask;
@@ -133,22 +138,22 @@ module memory_controller(
                 WriteEnable[1] <= Half_Access_R;
                 WriteEnable[0] <= Half_Access_R;
             end
-            else if (Left) begin
-                case (Address[1:0])
-                    2'b00 : WriteEnable <= (BE) ? 4'b1111 : 4'b0001;
-                    2'b01 : WriteEnable <= (BE) ? 4'b0111 : 4'b0011;
-                    2'b10 : WriteEnable <= (BE) ? 4'b0011 : 4'b0111;
-                    2'b11 : WriteEnable <= (BE) ? 4'b0001 : 4'b1111;
-                endcase
-            end
-            else if (Right) begin
-                case (Address[1:0])
-                    2'b00 : WriteEnable <= (BE) ? 4'b1000 : 4'b1111;
-                    2'b01 : WriteEnable <= (BE) ? 4'b1100 : 4'b1110;
-                    2'b10 : WriteEnable <= (BE) ? 4'b1110 : 4'b1100;
-                    2'b11 : WriteEnable <= (BE) ? 4'b1111 : 4'b1000;
-                endcase
-            end
+            // else if (Left) begin
+            //     case (Address[1:0])
+            //         2'b00 : WriteEnable <= (BE) ? 4'b1111 : 4'b0001;
+            //         2'b01 : WriteEnable <= (BE) ? 4'b0111 : 4'b0011;
+            //         2'b10 : WriteEnable <= (BE) ? 4'b0011 : 4'b0111;
+            //         2'b11 : WriteEnable <= (BE) ? 4'b0001 : 4'b1111;
+            //     endcase
+            // end
+            // else if (Right) begin
+            //     case (Address[1:0])
+            //         2'b00 : WriteEnable <= (BE) ? 4'b1000 : 4'b1111;
+            //         2'b01 : WriteEnable <= (BE) ? 4'b1100 : 4'b1110;
+            //         2'b10 : WriteEnable <= (BE) ? 4'b1110 : 4'b1100;
+            //         2'b11 : WriteEnable <= (BE) ? 4'b1111 : 4'b1000;
+            //     endcase
+            // end
             else begin
                 WriteEnable <= 4'b1111;
             end
@@ -191,22 +196,22 @@ module memory_controller(
         else if (LLSC & MemWrite) begin
             DataOut <= (LLSC_Atomic & (Address[31:2] == LLSC_Address)) ? 32'h0000_0001 : 32'h0000_0000;
         end
-        else if (Left) begin
-            case (Address[1:0])
-                2'b00 : DataOut <= (BE) ?  MReadData                      : {MReadData[7:0],  DataIn[23:0]};
-                2'b01 : DataOut <= (BE) ? {MReadData[23:0], DataIn[7:0]}  : {MReadData[15:0], DataIn[15:0]};
-                2'b10 : DataOut <= (BE) ? {MReadData[15:0], DataIn[15:0]} : {MReadData[23:0], DataIn[7:0]};
-                2'b11 : DataOut <= (BE) ? {MReadData[7:0],  DataIn[23:0]} :  MReadData;
-            endcase
-        end
-        else if (Right) begin
-            case (Address[1:0])
-                2'b00 : DataOut <= (BE) ? {DataIn[31:8],  MReadData[31:24]} : MReadData;
-                2'b01 : DataOut <= (BE) ? {DataIn[31:16], MReadData[31:16]} : {DataIn[31:24], MReadData[31:8]};
-                2'b10 : DataOut <= (BE) ? {DataIn[31:24], MReadData[31:8]}  : {DataIn[31:16], MReadData[31:16]};
-                2'b11 : DataOut <= (BE) ? MReadData                         : {DataIn[31:8],  MReadData[31:24]};
-            endcase
-        end
+        // else if (Left) begin
+        //     case (Address[1:0])
+        //         2'b00 : DataOut <= (BE) ?  MReadData                      : {MReadData[7:0],  DataIn[23:0]};
+        //         2'b01 : DataOut <= (BE) ? {MReadData[23:0], DataIn[7:0]}  : {MReadData[15:0], DataIn[15:0]};
+        //         2'b10 : DataOut <= (BE) ? {MReadData[15:0], DataIn[15:0]} : {MReadData[23:0], DataIn[7:0]};
+        //         2'b11 : DataOut <= (BE) ? {MReadData[7:0],  DataIn[23:0]} :  MReadData;
+        //     endcase
+        // end
+        // else if (Right) begin
+        //     case (Address[1:0])
+        //         2'b00 : DataOut <= (BE) ? {DataIn[31:8],  MReadData[31:24]} : MReadData;
+        //         2'b01 : DataOut <= (BE) ? {DataIn[31:16], MReadData[31:16]} : {DataIn[31:24], MReadData[31:8]};
+        //         2'b10 : DataOut <= (BE) ? {DataIn[31:24], MReadData[31:8]}  : {DataIn[31:16], MReadData[31:16]};
+        //         2'b11 : DataOut <= (BE) ? MReadData                         : {DataIn[31:8],  MReadData[31:24]};
+        //     endcase
+        // end
         else begin
             DataOut <= MReadData;
         end
