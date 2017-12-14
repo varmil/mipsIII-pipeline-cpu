@@ -42,11 +42,9 @@ module memory_controller(
     /*** Reverse Endian Mode
          Normal memory accesses in the processor are Big Endian. The endianness can be reversed
          to Little Endian in User Mode only.
-
-         2017/12/13 We always use Little Endian mode
     */
     // wire BE = KernelMode | ~ReverseEndian;
-    wire BE = 0;
+    wire BE = 0; // 2017/12/13 We always use Little Endian mode
 
     /*** Indicator that the current memory reference must be word-aligned ***/
     wire Word = ~(Half | Byte /*| Left | Right*/);
@@ -116,6 +114,7 @@ module memory_controller(
     assign M_Stall = ReadEnable | (WriteEnable != 4'b0000) | DataMem_Ack | M_Exception_Stall;
     assign ReadEnable  = ReadCondition  & ~RW_Mask;
 
+    // Address[1] is 2byte align, Address[0] is byte align
     wire Half_Access_L  = (Address[1] ^  BE);
     wire Half_Access_R  = (Address[1] ~^ BE);
     wire Byte_Access_LL = Half_Access_L & (Address[1] ~^ Address[0]);
@@ -164,6 +163,7 @@ module memory_controller(
     end
 
     // Data Going to Memory
+    // WriteEnable[3:0] work as masks of MWriteData
     assign MWriteData[31:24] = (Byte) ? DataIn[7:0] : ((Half) ? DataIn[15:8] : DataIn[31:24]);
     assign MWriteData[23:16] = (Byte | Half) ? DataIn[7:0] : DataIn[23:16];
     assign MWriteData[15:8]  = (Byte) ? DataIn[7:0] : DataIn[15:8];
