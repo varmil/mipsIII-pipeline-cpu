@@ -28,10 +28,11 @@ module memory_controller(
     // input  Right,                   // Unaligned Load/Store Word Right
     input  M_Exception_Stall,
     input  IF_Stall,                // XXX Clean this up between this module and HAZ/FWD
-    output reg [31:0] DataOut,      // Data to CPU
+    output reg [31:0] DataOut,      // Data to CPU (processed DataIn)
     output [31:0] MWriteData,       // Data to Memory
-    output reg [3:0] WriteEnable,   // Write Enable to Memory for each of 4 bytes of Memory
-    output ReadEnable,               // Read Enable to Memory
+    output reg [3:0] ByteEnable,    // Write Enable to Memory for each of 4 bytes of Memory
+    output ReadEnable,              // Read Enable to Memory
+    output WriteEnable,             // Write Enable to Memory
     output M_Stall
     // output EXC_AdEL,                // Load Exception
     // output EXC_AdES                 // Store Exception
@@ -111,8 +112,9 @@ module memory_controller(
     always @(posedge CLK) begin
         RW_Mask <= (RST) ? 1'b0 : (((MemWrite | MemRead) & DataMem_Ack) ? 1'b1 : ((~M_Stall & ~IF_Stall) ? 1'b0 : RW_Mask));
     end
-    assign M_Stall = ReadEnable | (WriteEnable != 4'b0000) | DataMem_Ack | M_Exception_Stall;
     assign ReadEnable  = ReadCondition  & ~RW_Mask;
+    assign WriteEnable = (ByteEnable != 4'b0000);
+    assign M_Stall = ReadEnable | WriteEnable | DataMem_Ack | M_Exception_Stall;
 
     // Address[1] is 2byte align, Address[0] is byte align
     wire Half_Access_L  = (Address[1] ^  BE);
@@ -122,48 +124,48 @@ module memory_controller(
     wire Byte_Access_RM = Half_Access_R & (Address[0] ^  BE);
     wire Byte_Access_RR = Half_Access_R & (Address[1] ~^ Address[0]);
 
-    // Write-Enable Signals to Memory
+    // Byte-Enable Signals to Memory
     always @(*) begin
         if (WriteCondition & ~RW_Mask) begin
             if (Byte) begin
-                WriteEnable[3] <= Byte_Access_LL;
-                WriteEnable[2] <= Byte_Access_LM;
-                WriteEnable[1] <= Byte_Access_RM;
-                WriteEnable[0] <= Byte_Access_RR;
+                ByteEnable[3] <= Byte_Access_LL;
+                ByteEnable[2] <= Byte_Access_LM;
+                ByteEnable[1] <= Byte_Access_RM;
+                ByteEnable[0] <= Byte_Access_RR;
             end
             else if (Half) begin
-                WriteEnable[3] <= Half_Access_L;
-                WriteEnable[2] <= Half_Access_L;
-                WriteEnable[1] <= Half_Access_R;
-                WriteEnable[0] <= Half_Access_R;
+                ByteEnable[3] <= Half_Access_L;
+                ByteEnable[2] <= Half_Access_L;
+                ByteEnable[1] <= Half_Access_R;
+                ByteEnable[0] <= Half_Access_R;
             end
             // else if (Left) begin
             //     case (Address[1:0])
-            //         2'b00 : WriteEnable <= (BE) ? 4'b1111 : 4'b0001;
-            //         2'b01 : WriteEnable <= (BE) ? 4'b0111 : 4'b0011;
-            //         2'b10 : WriteEnable <= (BE) ? 4'b0011 : 4'b0111;
-            //         2'b11 : WriteEnable <= (BE) ? 4'b0001 : 4'b1111;
+            //         2'b00 : ByteEnable <= (BE) ? 4'b1111 : 4'b0001;
+            //         2'b01 : ByteEnable <= (BE) ? 4'b0111 : 4'b0011;
+            //         2'b10 : ByteEnable <= (BE) ? 4'b0011 : 4'b0111;
+            //         2'b11 : ByteEnable <= (BE) ? 4'b0001 : 4'b1111;
             //     endcase
             // end
             // else if (Right) begin
             //     case (Address[1:0])
-            //         2'b00 : WriteEnable <= (BE) ? 4'b1000 : 4'b1111;
-            //         2'b01 : WriteEnable <= (BE) ? 4'b1100 : 4'b1110;
-            //         2'b10 : WriteEnable <= (BE) ? 4'b1110 : 4'b1100;
-            //         2'b11 : WriteEnable <= (BE) ? 4'b1111 : 4'b1000;
+            //         2'b00 : ByteEnable <= (BE) ? 4'b1000 : 4'b1111;
+            //         2'b01 : ByteEnable <= (BE) ? 4'b1100 : 4'b1110;
+            //         2'b10 : ByteEnable <= (BE) ? 4'b1110 : 4'b1100;
+            //         2'b11 : ByteEnable <= (BE) ? 4'b1111 : 4'b1000;
             //     endcase
             // end
             else begin
-                WriteEnable <= 4'b1111;
+                ByteEnable <= 4'b1111;
             end
         end
         else begin
-            WriteEnable <= 4'b0000;
+            ByteEnable <= 4'b0000;
         end
     end
 
     // Data Going to Memory
-    // WriteEnable[3:0] work as masks of MWriteData
+    // ByteEnable[3:0] work as masks of MWriteData
     assign MWriteData[31:24] = (Byte) ? DataIn[7:0] : ((Half) ? DataIn[15:8] : DataIn[31:24]);
     assign MWriteData[23:16] = (Byte | Half) ? DataIn[7:0] : DataIn[23:16];
     assign MWriteData[15:8]  = (Byte) ? DataIn[7:0] : DataIn[15:8];

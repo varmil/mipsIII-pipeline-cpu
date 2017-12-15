@@ -1,5 +1,3 @@
-// NOTE: MemRead is not used at now
-
 module board (
   input logic CLK, RST
 );
@@ -10,7 +8,8 @@ module board (
   logic [31:0] ReadAddress;
   logic [31:0] WriteData;
   logic [31:0] ReadData;
-  logic MemRead, MemWrite;
+  logic MemReadEnable, MemWriteEnable;
+  logic [3:0] MemByteEnable;
 
   core core(
     CLK, RST,
@@ -19,15 +18,19 @@ module board (
     PC,
     ReadAddress,
     WriteData,
-    MemRead,
-    MemWrite
+    MemReadEnable,
+    MemWriteEnable,
+    MemByteEnable
   );
   instruction_memory #(32) instruction_memory(PC, Instr);
   data_memory #(32) data_memory(
     CLK,
     ReadAddress,
     WriteData,
-    MemWrite,
+    MemWriteEnable,
+    MemReadEnable,
+    MemByteEnable,
+
     ReadData
   );
 

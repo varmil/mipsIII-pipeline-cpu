@@ -5,15 +5,16 @@ module core (
   // from I-Memory
   input logic [31:0] Instr,
   // from D-Memory
-  input logic [31:0] ReadData,
+  input logic [31:0] ReadDataOriginal,
 
   // to I-Memory
   output logic [31:0] PC,
   // to D-Memory
   output logic [31:0] ALUOut,    // address from ALU
   output logic [31:0] WriteData, // data from register file
-  output logic MemRead,
-  output logic MemWrite
+  output logic        MemReadEnable,
+  output logic        MemWriteEnable,
+  output logic [3:0]  MemByteEnable    // 4-bit Write, one for each byte in word.
 );
 
   /*** Constant ***/
@@ -48,8 +49,8 @@ module core (
   wire TrapCond      ;
   wire RegDst        ;
   wire LLSC          ;
-  // wire MemRead       ;
-  // wire MemWrite      ;
+  wire MemRead       ;
+  wire MemWrite      ;
   wire MemHalf       ;
   wire MemByte       ;
   wire MemSignExtend ;
@@ -76,14 +77,19 @@ module core (
   wire [31:0] ExtImmOut;
   wire [31:0] SL2ForPCBranchOut;
   wire [31:0] ALUSrcOut;
+  wire [31:0] ReadDataProcessed;
 
-  /*** concat wire ***/
+  /*** MEM (Memory) Signals ***/
+  wire M_Stall;
+  wire M_Stall_Controller;
+
+  /*** wire init ***/
   wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
+  wire [31:0] WriteDataPre = RegReadData2;
 
   /*** assignment ***/
   assign Instruction = Instr;
   assign ALUOut = ALUResult;
-  assign WriteData = RegReadData2;
 
 
   /*** block modules ***/
@@ -150,28 +156,29 @@ module core (
   memory_controller data_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
-    // .DataIn        (M_WriteData_Pre),
-    // .Address       (M_ALUResult),
-    // .MReadData     (DataMem_In),
+    .DataIn        (WriteDataPre),
+    .Address       (ALUOut),
+    .MReadData     (ReadDataOriginal),
     .MemRead       (MemRead),
     .MemWrite      (MemWrite),
-    // .DataMem_Ack   (DataMem_Ack),
+    .DataMem_Ack   (1'b0),
     .Byte          (MemByte),
     .Half          (MemHalf),
     .SignExtend    (MemSignExtend),
-    // .KernelMode    (M_KernelMode),
+    .KernelMode    (1'b1),
     // .ReverseEndian (M_ReverseEndian),
-    // .LLSC          (M_LLSC),
-    // .ERET          (ID_Eret),
+    .LLSC          (LLSC),
+    .ERET          (Eret),
     // .Left          (M_Left),
     // .Right         (M_Right),
-    // .M_Exception_Stall (M_Exception_Stall),
-    // .IF_Stall      (IF_Stall),
-    // .DataOut       (M_MemReadData),
-    // .MWriteData    (DataMem_Out),
-    // .WriteEnable   (DataMem_Write),
-    // .ReadEnable    (DataMem_Read),
-    // .M_Stall       (M_Stall_Controller),
+    .M_Exception_Stall (1'b0),
+    .IF_Stall      (1'b0),
+    .DataOut       (ReadDataProcessed),
+    .MWriteData    (WriteData),
+    .ByteEnable    (MemByteEnable),
+    .ReadEnable    (MemReadEnable),
+    .WriteEnable   (MemWriteEnable),
+    .M_Stall       (M_Stall_Controller)
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)
   );
@@ -181,7 +188,7 @@ module core (
   mux4 #(32) pc_src(PCPlus4Out, PCJumpAddress, PCBranchOut, RegReadData1, PCSrc, PCSrcOut);
   mux2 #(5)  reg_dst(Rt, Rd, RegDst, RegDstOut);
   mux2 #(32) alu_src(RegReadData2, ExtImmOut, ALUSrc, ALUSrcOut);
-  mux2 #(32) mem_to_reg(ALUResult, ReadData, MemtoReg, MemtoRegOut);
+  mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, MemtoReg, MemtoRegOut);
 
   adder #(32) pc_plus4(PC, `PCIncrAmt, PCPlus4Out);
   adder #(32) pc_branch(PCPlus4Out, SL2ForPCBranchOut, PCBranchOut);

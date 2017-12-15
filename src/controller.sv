@@ -155,7 +155,7 @@ module controller (
               `Op_Addiu   : Datapath <= `DP_Addiu;
               `Op_Andi    : Datapath <= `DP_Andi;
               `Op_Ori     : Datapath <= `DP_Ori;
-              `Op_Pref    : Datapath <= `DP_Pref;
+              // `Op_Pref    : Datapath <= `DP_Pref;
               `Op_Slti    : Datapath <= `DP_Slti;
               `Op_Sltiu   : Datapath <= `DP_Sltiu;
               `Op_Xori    : Datapath <= `DP_Xori;
