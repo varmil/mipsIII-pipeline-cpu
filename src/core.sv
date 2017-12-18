@@ -79,6 +79,10 @@ module core (
   wire [31:0] ALUSrcOut;
   wire [31:0] ReadDataProcessed;
 
+  /*** ALU Signals ***/
+  wire EX_EXC_Ov;
+  wire EX_ALU_Stall;
+
   /*** MEM (Memory) Signals ***/
   wire M_Stall;
   wire M_Stall_Controller;
@@ -104,11 +108,16 @@ module core (
     RegReadData1, RegReadData2
   );
   alu alu(
-    ALUOp, Shamt,
     // input
-    RegReadData1, ALUSrcOut,
+    CLK, RST,
+    ALUOp,
+    Shamt,
+    RegReadData1, ALUSrcOut, // A, B
+
     // output
-    ALUResult
+    ALUResult,
+    EX_EXC_Ov,
+    EX_ALU_Stall
   );
   controller controller(
     // instruction input
