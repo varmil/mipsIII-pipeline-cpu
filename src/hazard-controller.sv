@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 /*
  * Description:
  *   Hazard Detection and Forward Control. This is the glue that allows a

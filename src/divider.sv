@@ -1,4 +1,3 @@
-`timescale 1ns / 1ns
 /*
  * File         : Divide.v
  * Project      : University of Utah, XUM Project MIPS32 core
