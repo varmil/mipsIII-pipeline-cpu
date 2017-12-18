@@ -58,7 +58,18 @@ module alu (
   wire Div_Start    = (Div_Fsm == 1'b0) && (Operation == `AluOp_Div)  && (HILO_Commit == 1'b1);
   wire Divu_Start   = (Div_Fsm == 1'b0) && (Operation == `AluOp_Divu) && (HILO_Commit == 1'b1);
 
-  // ALU stall (NOTE: HILO_Access is really needed ? for what ?)
+  /***
+   ALU only stall when needed HILO access in dividing
+    ex1) the case which does NOT cause stall
+        DIVU
+        ADDU
+        ORI
+        ..... (OPs which not access HILO)
+
+    ex2) the case which cause stall
+        DIVU
+        MFHI
+   ***/
   assign ALU_Stall  = (Div_Fsm == 1'b1) && (HILO_Access == 1'b1);
 
 
