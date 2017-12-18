@@ -1,5 +1,6 @@
 module alu (
   input logic CLK, RST,
+  input logic EX_Stall,
   input logic [4:0] Operation,
   input logic signed [4:0] Shamt,
   input logic [31:0] A, B,
@@ -46,7 +47,7 @@ module alu (
   // HILO
   wire [31:0] HI = HILO[63:32];
   wire [31:0] LO = HILO[31:0];
-  wire        HILO_Commit = 1'b1; // TODO: ~(EX_Stall | EX_Flush); // 0: EX stage is either stall or flush, 1: other
+  wire        HILO_Commit = ~(EX_Stall); // TODO: ~(EX_Stall | EX_Flush); // 0: EX stage is either stall or flush, 1: other
 
   // DIV(U)
   wire [31:0] Quotient;

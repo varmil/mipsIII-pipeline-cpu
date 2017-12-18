@@ -28,7 +28,7 @@ module divider(
     output [31:0]   Quotient,
     output [31:0]   Remainder,
     output          Stall       // True while calculating
-    );
+);
 
 
     reg             active;     // True if the divider is running

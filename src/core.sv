@@ -3,15 +3,15 @@ module core (
   // from board
   input  logic CLK, RST,
   // from I-Memory
-  input logic [31:0] Instr,
+  input logic [31:0] Instruction,
   // from D-Memory
   input logic [31:0] ReadDataOriginal,
 
   // to I-Memory
   output logic [31:0] PC,
   // to D-Memory
-  output logic [31:0] ALUOut,    // address from ALU
-  output logic [31:0] WriteData, // data from register file
+  output logic [31:0] ALUResult,    // address from ALU
+  output logic [31:0] WriteData,    // data from register file
   output logic        MemReadEnable,
   output logic        MemWriteEnable,
   output logic [3:0]  MemByteEnable    // 4-bit Write, one for each byte in word.
@@ -22,7 +22,6 @@ module core (
   `define PCInit      0
 
   /*** parse instruction ***/
-  wire [31:0] Instruction;
   wire [5:0]  OpCode      = Instruction[31:26];
   wire [4:0]  Rs          = Instruction[25:21];
   wire [4:0]  Rt          = Instruction[20:16];
@@ -59,7 +58,6 @@ module core (
 
   /*** ALU Operations ***/
   wire [4:0]  ALUOp;
-  wire [31:0] ALUResult;
 
   /*** Register File ***/
   wire [31:0] RegReadData1;
@@ -80,6 +78,7 @@ module core (
   wire [31:0] ReadDataProcessed;
 
   /*** ALU Signals ***/
+  wire EX_Stall;
   wire EX_EXC_Ov;
   wire EX_ALU_Stall;
 
@@ -90,10 +89,6 @@ module core (
   /*** wire init ***/
   wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
   wire [31:0] WriteDataPre = RegReadData2;
-
-  /*** assignment ***/
-  assign Instruction = Instr;
-  assign ALUOut = ALUResult;
 
 
   /*** block modules ***/
@@ -110,10 +105,10 @@ module core (
   alu alu(
     // input
     CLK, RST,
+    EX_Stall,
     ALUOp,
     Shamt,
     RegReadData1, ALUSrcOut, // A, B
-
     // output
     ALUResult,
     EX_EXC_Ov,
@@ -151,6 +146,13 @@ module core (
     // ALU Operations output
     ALUOp
   );
+  /*** Hazard and Forward Control Unit ***/
+  hazard_controller hazard_controller(
+    // input
+    EX_ALU_Stall,
+    // output
+    EX_Stall
+  );
   /*** Condition Compare Unit ***/
   Compare Compare (
     .A    (RegReadData1),
@@ -166,7 +168,7 @@ module core (
     .CLK           (CLK),
     .RST           (RST),
     .DataIn        (WriteDataPre),
-    .Address       (ALUOut),
+    .Address       (ALUResult),
     .MReadData     (ReadDataOriginal),
     .MemRead       (MemRead),
     .MemWrite      (MemWrite),
