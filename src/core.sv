@@ -56,9 +56,6 @@ module core (
   wire RegWrite      ;
   wire MemtoReg      ;
 
-  /*** ALU Operations ***/
-  wire [4:0]  ALUOp;
-
   /*** Register File ***/
   wire [31:0] RegReadData1;
   wire [31:0] RegReadData2;
@@ -77,11 +74,6 @@ module core (
   wire [31:0] ALUSrcOut;
   wire [31:0] ReadDataProcessed;
 
-  /*** ALU Signals ***/
-  wire EX_Stall;
-  wire EX_EXC_Ov;
-  wire EX_ALU_Stall;
-
   /*** MEM (Memory) Signals ***/
   wire M_Stall;
   wire M_Stall_Controller;
@@ -91,7 +83,30 @@ module core (
   wire [31:0] WriteDataPre = RegReadData2;
 
 
-  /*** block modules ***/
+  /*** ID (Instruction Decode) Signals ***/
+  wire ID_Stall;
+  //  wire [1:0] ID_PCSrc;
+  //  wire [1:0] ID_RsFwdSel, ID_RtFwdSel;
+  //  wire ID_Link, ID_Movn, ID_Movz;
+  //  wire ID_SignExtend;
+  //  wire ID_LLSC;
+  //  wire ID_RegDst, ID_ALUSrcImm, ID_MemWrite, ID_MemRead, ID_MemByte, ID_MemHalf, ID_MemSignExtend, ID_RegWrite, ID_MemtoReg;
+  wire [4:0] ID_ALUOp;
+  wire ID_Exception_Flush;
+
+  /*** EX (Execute) Signals ***/
+  wire EX_ALU_Stall, EX_Stall;
+  // wire [1:0] EX_RsFwdSel, EX_RtFwdSel;
+  // wire EX_Link;
+  // wire [1:0] EX_LinkRegDst;
+  // wire EX_ALUSrcImm;
+  wire [4:0] EX_ALUOp;
+  wire EX_EXC_Ov;
+
+
+  /***
+   block modules
+  ***/
   program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
   register_file register_file(
     CLK, RegWrite,
@@ -106,7 +121,7 @@ module core (
     // input
     CLK, RST,
     EX_Stall,
-    ALUOp,
+    EX_ALUOp,
     Shamt,
     RegReadData1, ALUSrcOut, // A, B
     // output
@@ -144,7 +159,7 @@ module core (
     RegWrite      ,
     MemtoReg      ,
     // ALU Operations output
-    ALUOp
+    ID_ALUOp
   );
   /*** Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
@@ -195,7 +210,90 @@ module core (
   );
 
 
-  /*** common modules ***/
+  /***
+   stages
+  ***/
+  /*** Instruction Decode -> Execute Pipeline Stage ***/
+  idex_stage idex_stage (
+      .CLK               (CLK),
+      .RST               (RST),
+      .ID_Flush          (ID_Exception_Flush),
+      .ID_Stall          (ID_Stall),
+      .EX_Stall          (EX_Stall),
+      // .ID_Link           (ID_Link),
+      // .ID_RegDst         (ID_RegDst),
+      // .ID_ALUSrcImm      (ID_ALUSrcImm),
+      .ID_ALUOp          (ID_ALUOp),
+      // .ID_Movn           (ID_Movn),
+      // .ID_Movz           (ID_Movz),
+      // .ID_LLSC           (ID_LLSC),
+      // .ID_MemRead        (ID_MemRead),
+      // .ID_MemWrite       (ID_MemWrite),
+      // .ID_MemByte        (ID_MemByte),
+      // .ID_MemHalf        (ID_MemHalf),
+      // .ID_MemSignExtend  (ID_MemSignExtend),
+      // .ID_Left           (ID_Left),
+      // .ID_Right          (ID_Right),
+      // .ID_RegWrite       (ID_RegWrite),
+      // .ID_MemtoReg       (ID_MemtoReg),
+      // .ID_ReverseEndian  (ID_ReverseEndian),
+      // .ID_Rs             (Rs),
+      // .ID_Rt             (Rt),
+      // .ID_WantRsByEX     (ID_DP_Hazards[3]),
+      // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
+      // .ID_WantRtByEX     (ID_DP_Hazards[1]),
+      // .ID_NeedRtByEX     (ID_DP_Hazards[0]),
+      // .ID_KernelMode     (ID_KernelMode),
+      // .ID_RestartPC      (ID_RestartPC),
+      // .ID_IsBDS          (ID_IsBDS),
+      // .ID_Trap           (ID_Trap),
+      // .ID_TrapCond       (ID_TrapCond),
+      // .ID_EX_CanErr      (ID_EX_CanErr),
+      // .ID_M_CanErr       (ID_M_CanErr),
+      // .ID_ReadData1      (ID_ReadData1_End),
+      // .ID_ReadData2      (ID_ReadData2_End),
+      // .ID_SignExtImm     (ID_SignExtImm[16:0]),
+      // .EX_Link           (EX_Link),
+      // .EX_LinkRegDst     (EX_LinkRegDst),
+      // .EX_ALUSrcImm      (EX_ALUSrcImm),
+      .EX_ALUOp          (EX_ALUOp)
+      // .EX_Movn           (EX_Movn),
+      // .EX_Movz           (EX_Movz),
+      // .EX_LLSC           (EX_LLSC),
+      // .EX_MemRead        (EX_MemRead),
+      // .EX_MemWrite       (EX_MemWrite),
+      // .EX_MemByte        (EX_MemByte),
+      // .EX_MemHalf        (EX_MemHalf),
+      // .EX_MemSignExtend  (EX_MemSignExtend),
+      // .EX_Left           (EX_Left),
+      // .EX_Right          (EX_Right),
+      // .EX_RegWrite       (EX_RegWrite),
+      // .EX_MemtoReg       (EX_MemtoReg),
+      // .EX_ReverseEndian  (EX_ReverseEndian),
+      // .EX_Rs             (EX_Rs),
+      // .EX_Rt             (EX_Rt),
+      // .EX_WantRsByEX     (EX_WantRsByEX),
+      // .EX_NeedRsByEX     (EX_NeedRsByEX),
+      // .EX_WantRtByEX     (EX_WantRtByEX),
+      // .EX_NeedRtByEX     (EX_NeedRtByEX),
+      // .EX_KernelMode     (EX_KernelMode),
+      // .EX_RestartPC      (EX_RestartPC),
+      // .EX_IsBDS          (EX_IsBDS),
+      // .EX_Trap           (EX_Trap),
+      // .EX_TrapCond       (EX_TrapCond),
+      // .EX_EX_CanErr      (EX_EX_CanErr),
+      // .EX_M_CanErr       (EX_M_CanErr),
+      // .EX_ReadData1      (EX_ReadData1_PR),
+      // .EX_ReadData2      (EX_ReadData2_PR),
+      // .EX_SignExtImm     (EX_SignExtImm),
+      // .EX_Rd             (EX_Rd),
+      // .EX_Shamt          (EX_Shamt)
+  );
+
+
+  /***
+   common modules
+  ***/
   mux4 #(32) pc_src(PCPlus4Out, PCJumpAddress, PCBranchOut, RegReadData1, PCSrc, PCSrcOut);
   mux2 #(5)  reg_dst(Rt, Rd, RegDst, RegDstOut);
   mux2 #(32) alu_src(RegReadData2, ExtImmOut, ALUSrc, ALUSrcOut);
