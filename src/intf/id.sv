@@ -22,17 +22,19 @@ interface intf_id();
   logic ID_Exception_Flush;
   logic ID_PCSrc_Exc;
   logic [31:0] ID_ExceptionPC;
-  logic [31:0] ID_PCAdd4;
   logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
   logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
   logic [31:0] CP0_RegOut;
   wire  [29:0] ID_SignExtImm = (SignExtend & Immediate[15]) ? {14'h3FFF, Immediate} : {14'h0000, Immediate};
   wire  [31:0] ID_ImmLeftShift2 = {ID_SignExtImm[29:0], 2'b00};
-  wire  [31:0] ID_JumpAddress = {ID_PCAdd4[31:28], JumpAddress[25:0], 2'b00};
-  logic [31:0] ID_BranchAddress;
   logic [31:0] ID_RestartPC;
   logic ID_IsBDS;
   logic ID_IsFlushed;
+
+  // core internal wire
+  logic [31:0] PCAdd4;
+  logic [31:0] PCBranchOut;
+  wire  [31:0] PCJumpAddress = {PCAdd4[31:28], JumpAddress[25:0], 2'b00};
 
   // Controller
   logic SignExtend;
@@ -51,7 +53,7 @@ interface intf_id();
   // ifid_stage
   modport ifid_out(
     output ID_Instruction,
-    output ID_PCAdd4,
+    output PCAdd4,
     output ID_RestartPC,
     output ID_IsBDS,
     output ID_IsFlushed
@@ -62,18 +64,18 @@ interface intf_id();
     input  ID_Exception_Flush,
     input  ID_Stall,
     // Control Signals
-    input  ID_Link,
-    input  ID_ALUSrcImm,
-    input  ID_RegDst,
-    input  ID_LLSC,
-    input  ID_ALUOp,
-    input  ID_MemRead,
-    input  ID_MemWrite,
-    input  ID_MemHalf,
-    input  ID_MemByte,
-    input  ID_MemSignExtend,
-    input  ID_RegWrite,
-    input  ID_MemtoReg,
+    input  Link,
+    input  ALUSrcImm,
+    input  RegDst,
+    input  LLSC,
+    input  ALUOp,
+    input  MemRead,
+    input  MemWrite,
+    input  MemHalf,
+    input  MemByte,
+    input  MemSignExtend,
+    input  RegWrite,
+    input  MemtoReg,
     input  ID_ReverseEndian,
     // Hazard & Forwarding
     input  Rs,

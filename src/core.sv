@@ -31,39 +31,13 @@ module core (
   wire [25:0] JumpAddress = Instruction[25:0];
   wire [4:0]  Shamt       = Instruction[10:6];
 
-  /*** Controller ***/
-  wire SignExtend    ;
-  wire Mfc0          ;
-  wire Mtc0          ;
-  wire Eret          ;
-
-  /*** Datapath ***/
-  wire [1:0] PCSrc   ;
-  wire Link          ;
-  wire ALUSrc        ;
-  wire Trap          ;
-  wire TrapCond      ;
-  wire RegDst        ;
-  wire LLSC          ;
-  wire MemRead       ;
-  wire MemWrite      ;
-  wire MemHalf       ;
-  wire MemByte       ;
-  wire MemSignExtend ;
-  wire RegWrite      ;
-  wire MemtoReg      ;
-
   /*** Register File ***/
   wire [31:0] RegReadData1;
   wire [31:0] RegReadData2;
 
-  /*** for branch operations ***/
-  wire CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
-
   /*** internal signals ***/
-  wire [31:0] PCPlus4Out;
-  wire [31:0] PCBranchOut;
-  wire [31:0] PCSrcOut;
+  wire [31:0] ID.PCBranchOut;
+  wire [31:0] IF.PCSrcOut;
   wire [4:0]  RegDstOut;
   wire [31:0] MemtoRegOut;
   wire [31:0] ExtImmOut;
@@ -76,7 +50,6 @@ module core (
   wire M_Stall_Controller;
 
   /*** wire init ***/
-  wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
   wire [31:0] WriteDataPre = RegReadData2;
 
   /*** IF (Instruction Fetch) Signals ***/
@@ -102,11 +75,11 @@ module core (
   /***
    block modules
   ***/
-  program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
+  program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, IF.PCSrcOut, PC);
   register_file register_file(
-    CLK, RegWrite,
+    CLK, ID.RegWrite,
     // read reg num1, 2, write reg num
-    Rs, Rt, RegDstOut,
+    ID.Rs, ID.Rt, RegDstOut,
     // write data
     MemtoRegOut,
     // read data
@@ -140,11 +113,11 @@ module core (
   Compare Compare (
     .A    (RegReadData1),
     .B    (RegReadData2),
-    .EQ   (CmpEQ),
-    .GZ   (CmpGZ),
-    .LZ   (CmpLZ),
-    .GEZ  (CmpGEZ),
-    .LEZ  (CmpLEZ)
+    .EQ   (ID.CmpEQ),
+    .GZ   (ID.CmpGZ),
+    .LZ   (ID.CmpLZ),
+    .GEZ  (ID.CmpGEZ),
+    .LEZ  (ID.CmpLEZ)
   );
   /*** TODO: Data Memory Controller ***/
   memory_controller data_memory_controller (
@@ -153,16 +126,16 @@ module core (
     .DataIn        (WriteDataPre),
     .Address       (ALUResult),
     .MReadData     (ReadDataOriginal),
-    .MemRead       (MemRead),
-    .MemWrite      (MemWrite),
+    .MemRead       (ID.MemRead),
+    .MemWrite      (ID.MemWrite),
     .DataMem_Ack   (1'b0),
-    .Byte          (MemByte),
-    .Half          (MemHalf),
-    .SignExtend    (MemSignExtend),
+    .Byte          (ID.MemByte),
+    .Half          (ID.MemHalf),
+    .SignExtend    (ID.MemSignExtend),
     .KernelMode    (1'b1),
     // .ReverseEndian (M_ReverseEndian),
-    .LLSC          (LLSC),
-    .ERET          (Eret),
+    .LLSC          (ID.LLSC),
+    .ERET          (ID.Eret),
     // .Left          (M_Left),
     // .Right         (M_Right),
     .M_Exception_Stall (1'b0),
@@ -207,15 +180,15 @@ module core (
   /***
    common modules
   ***/
-  mux4 #(32) pc_src(PCPlus4Out, PCJumpAddress, PCBranchOut, RegReadData1, PCSrc, PCSrcOut);
-  mux2 #(5)  reg_dst(Rt, Rd, RegDst, RegDstOut);
-  mux2 #(32) alu_src(RegReadData2, ExtImmOut, ALUSrc, ALUSrcOut);
-  mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, MemtoReg, MemtoRegOut);
+  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, RegReadData1, ID.PCSrc, IF.PCSrcOut);
+  mux2 #(5)  reg_dst(ID.Rt, ID.Rd, ID.RegDst, RegDstOut);
+  mux2 #(32) alu_src(RegReadData2, ExtImmOut, ID.ALUSrc, ALUSrcOut);
+  mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, ID.MemtoReg, MemtoRegOut);
 
-  adder #(32) pc_plus4(PC, `PCIncrAmt, PCPlus4Out);
-  adder #(32) pc_branch(PCPlus4Out, SL2ForPCBranchOut, PCBranchOut);
+  adder #(32) pc_plus4(PC, `PCIncrAmt, IF.PCAdd4);
+  adder #(32) pc_branch(ID.PCAdd4, SL2ForPCBranchOut, ID.PCBranchOut);
 
-  sign_or_zero_extender ext_imm(Immediate, SignExtend, ExtImmOut);
+  sign_or_zero_extender ext_imm(ID.Immediate, ID.SignExtend, ExtImmOut);
   sl2 sl2_for_pc_branch(ExtImmOut, SL2ForPCBranchOut);
 
 endmodule
