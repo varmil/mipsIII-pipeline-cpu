@@ -82,6 +82,8 @@ module core (
   wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
   wire [31:0] WriteDataPre = RegReadData2;
 
+  /*** IF (Instruction Fetch) Signals ***/
+  intf_if intf_if();
 
   /*** ID (Instruction Decode) Signals ***/
   wire ID_Stall;
@@ -130,36 +132,7 @@ module core (
     EX_ALU_Stall
   );
   controller controller(
-    // instruction input
-    OpCode, Funct, Rs, Rt,
-    // branch condition input
-    CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ,
-
-    // some logic operation output
-    SignExtend,
-    Movn,
-    Movz,
-    Mfc0,
-    Mtc0,
-    Eret,
-    // Datapath output
-    PCSrc         ,
-    Link          ,
-    ALUSrc        ,
-    Movc          ,
-    Trap          ,
-    TrapCond      ,
-    RegDst        ,
-    LLSC          ,
-    MemRead       ,
-    MemWrite      ,
-    MemHalf       ,
-    MemByte       ,
-    MemSignExtend ,
-    RegWrite      ,
-    MemtoReg      ,
-    // ALU Operations output
-    ID_ALUOp
+    .intf_id         (intf_id.controller)
   );
   /*** Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
@@ -217,59 +190,16 @@ module core (
   ifid_stage ifid_stage (
     .CLK             (CLK),
     .RST             (RST),
-    .IF_Flush        (IF_Exception_Flush | IF_Flush),
-    .IF_Stall        (IF_Stall),
-    .ID_Stall        (ID_Stall),
-    .IF_Instruction  (IF_Instruction),
-    .IF_PCAdd4       (IF_PCAdd4),
-    .IF_PC           (IF_PCOut),
-    .IF_IsBDS        (IF_IsBDS),
-    .ID_Instruction  (Instruction),
-    .ID_PCAdd4       (ID_PCAdd4),
-    .ID_RestartPC    (ID_RestartPC),
-    .ID_IsBDS        (ID_IsBDS),
-    .ID_IsFlushed    (ID_IsFlushed)
+    .intf_if         (intf_if.ifid_in),
+    .intf_id         (intf_id.ifid_out)
   );
   /*** Instruction Decode -> Execute Pipeline Stage ***/
   idex_stage idex_stage (
       .CLK               (CLK),
       .RST               (RST),
-      .ID_Flush          (ID_Exception_Flush),
-      .ID_Stall          (ID_Stall),
+      .intf_id           (intf_id.idex_in),
+
       .EX_Stall          (EX_Stall),
-      // .ID_Link           (ID_Link),
-      // .ID_RegDst         (ID_RegDst),
-      // .ID_ALUSrcImm      (ID_ALUSrcImm),
-      .ID_ALUOp          (ID_ALUOp),
-      // .ID_Movn           (ID_Movn),
-      // .ID_Movz           (ID_Movz),
-      // .ID_LLSC           (ID_LLSC),
-      // .ID_MemRead        (ID_MemRead),
-      // .ID_MemWrite       (ID_MemWrite),
-      // .ID_MemByte        (ID_MemByte),
-      // .ID_MemHalf        (ID_MemHalf),
-      // .ID_MemSignExtend  (ID_MemSignExtend),
-      // .ID_Left           (ID_Left),
-      // .ID_Right          (ID_Right),
-      // .ID_RegWrite       (ID_RegWrite),
-      // .ID_MemtoReg       (ID_MemtoReg),
-      // .ID_ReverseEndian  (ID_ReverseEndian),
-      // .ID_Rs             (Rs),
-      // .ID_Rt             (Rt),
-      // .ID_WantRsByEX     (ID_DP_Hazards[3]),
-      // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
-      // .ID_WantRtByEX     (ID_DP_Hazards[1]),
-      // .ID_NeedRtByEX     (ID_DP_Hazards[0]),
-      // .ID_KernelMode     (ID_KernelMode),
-      // .ID_RestartPC      (ID_RestartPC),
-      // .ID_IsBDS          (ID_IsBDS),
-      // .ID_Trap           (ID_Trap),
-      // .ID_TrapCond       (ID_TrapCond),
-      // .ID_EX_CanErr      (ID_EX_CanErr),
-      // .ID_M_CanErr       (ID_M_CanErr),
-      // .ID_ReadData1      (ID_ReadData1_End),
-      // .ID_ReadData2      (ID_ReadData2_End),
-      // .ID_SignExtImm     (ID_SignExtImm[16:0]),
       // .EX_Link           (EX_Link),
       // .EX_LinkRegDst     (EX_LinkRegDst),
       // .EX_ALUSrcImm      (EX_ALUSrcImm),
