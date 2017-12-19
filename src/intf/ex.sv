@@ -1,6 +1,9 @@
+// NOTE: minimum implementation
+
 /*** EX (Execute) Signals ***/
 interface intf_ex();
   logic Stall;
+  logic Flush;
 
   // control signals
   logic [4:0] ALUOp;
@@ -19,12 +22,20 @@ interface intf_ex();
   logic MemtoReg;
 
   // for branch logic
+  logic [4:0] Rt;
   logic [4:0] Rd;
   logic [4:0] Shamt;
+  logic [4:0] RegDstOut;
 
   // data signals
   logic [31:0] ReadData1, ReadData2;
   logic [31:0] ExtImmOut;
+  logic [31:0] ALUResult;
+
+  // core internal wire
+  logic [31:0] ALUSrcOut;
+  logic ALUStall;
+  logic ExcOv;
 
   modport idex_out(
     // control signals
@@ -43,6 +54,7 @@ interface intf_ex();
     output RegWrite,
     output MemtoReg,
 
+    output Rt,
     output Rd,
     output Shamt,
 
@@ -53,6 +65,20 @@ interface intf_ex();
   );
 
   modport exmem_in(
-    input ReadData2
+    // control signals
+    input Trap,
+    input TrapCond,
+    input LLSC,
+    input MemRead,
+    input MemWrite,
+    input MemHalf,
+    input MemByte,
+    input MemSignExtend,
+    input RegWrite,
+    input MemtoReg,
+
+    input ALUResult,
+    input ReadData2,
+    input RegDstOut
   );
 endinterface

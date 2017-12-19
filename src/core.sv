@@ -1,3 +1,5 @@
+// NOTE: RegDst names EX_RtRd. Impl -- see https://github.com/grantae/mips32r1_core/blob/master/mips32r1/Processor.v#L525-L532
+
 // The processor
 module core (
   // from board
@@ -10,8 +12,8 @@ module core (
   // to I-Memory
   output logic [31:0] PCForMem,
   // to D-Memory
-  output logic [31:0] ALUResult,    // address from ALU
-  output logic [31:0] WriteData,    // data from register file
+  output logic [31:0] DataMemAddress,    // address from ALU
+  output logic [31:0] WriteData,         // data from register file
   output logic        MemReadEnable,
   output logic        MemWriteEnable,
   output logic [3:0]  MemByteEnable    // 4-bit Write, one for each byte in word.
@@ -26,16 +28,12 @@ module core (
   /*** internal signals ***/
   // wire [31:0] ID.PCBranchOut;
   // wire [31:0] IF.PCSrcOut;
-  wire [4:0]  RegDstOut;
+  // wire [4:0]  RegDstOut;
   wire [31:0] MemtoRegOut;
   // wire [31:0] ID.ExtImmOut;
   // wire [31:0] ID.SL2OutForPCBranch;
-  wire [31:0] ALUSrcOut;
-  wire [31:0] ReadDataProcessed;
-
-  /*** MEM (Memory) Signals ***/
-  wire M_Stall;
-  wire M_Stall_Controller;
+  // wire [31:0] EX.ALUSrcOut;
+  // wire [31:0] MemReadData;
 // --------------------------------------------------
 
 
@@ -49,12 +47,11 @@ module core (
   ID intf_id();
 
   /*** EX (Execute) Signals ***/
-  wire EX_ALU_Stall;
-  wire [4:0] EX_ALUOp;
-  wire EX_EXC_Ov;
-
   EX intf_ex();
 
+  /*** Memory Signals ***/
+  MEM intf_mem();
+  assign DataMemAddress = MEM.ALUResult;
 
   /*** Other Signals ***/
   wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
@@ -71,7 +68,7 @@ module core (
   register_file register_file(
     CLK, ID.RegWrite,
     // read reg num1, 2, write reg num
-    ID.Rs, ID.Rt, RegDstOut,
+    ID.Rs, ID.Rt, /*TODO*/WB.RegDstOut,
     // write data
     MemtoRegOut,
     // read data
@@ -81,13 +78,13 @@ module core (
     // input
     CLK, RST,
     EX.Stall,
-    EX_ALUOp,
+    EX.ALUOp,
     ID.Shamt,
-    EX.ReadData1, ALUSrcOut, // A, B
+    EX.ReadData1, EX.ALUSrcOut, // A, B
     // output
-    ALUResult,
-    EX_EXC_Ov,
-    EX_ALU_Stall
+    EX.ALUResult,
+    EX.ExcOv,
+    EX.ALUStall
   );
   controller controller(
     .ID         (ID.controller)
@@ -97,7 +94,7 @@ module core (
   /*** Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
     // input
-    EX_ALU_Stall,
+    EX.ALUStall,
     // output
     EX.Stall
   );
@@ -115,27 +112,27 @@ module core (
   memory_controller data_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
-    .DataIn        (MEM.WriteDataPre),
-    .Address       (ALUResult),
+    .DataIn        (MEM.ReadData2),
+    .Address       (MEM.ALUResult),
     .MReadData     (ReadDataOriginal),
-    .MemRead       (ID.MemRead),
-    .MemWrite      (ID.MemWrite),
+    .MemRead       (MEM.MemRead),
+    .MemWrite      (MEM.MemWrite),
     .DataMem_Ack   (1'b0),
-    .Byte          (ID.MemByte),
-    .Half          (ID.MemHalf),
-    .SignExtend    (ID.MemSignExtend),
+    .Byte          (MEM.MemByte),
+    .Half          (MEM.MemHalf),
+    .SignExtend    (MEM.MemSignExtend),
     .KernelMode    (1'b1),
     // .ReverseEndian (M_ReverseEndian),
-    .LLSC          (ID.LLSC),
+    .LLSC          (MEM.LLSC),
     .ERET          (ID.Eret),
     .M_Exception_Stall (1'b0),
     .IF_Stall      (1'b0),
-    .DataOut       (ReadDataProcessed),
+    .DataOut       (MEM.MemReadData),
     .MWriteData    (WriteData),
     .ByteEnable    (MemByteEnable),
     .ReadEnable    (MemReadEnable),
     .WriteEnable   (MemWriteEnable),
-    .M_Stall       (M_Stall_Controller)
+    .M_Stall       (MEM.StallController)
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)
   );
@@ -172,14 +169,13 @@ module core (
   );
 
 
-
   /***
    common modules
   ***/
   mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
-  mux2 #(5)  reg_dst(ID.Rt, ID.Rd, ID.RegDst, RegDstOut);
-  mux2 #(32) alu_src(EX.ReadData2, EX.ExtImmOut, EX.ALUSrcImm, ALUSrcOut);
-  mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, ID.MemtoReg, MemtoRegOut);
+  mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
+  mux2 #(32) alu_src(EX.ReadData2, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
+  mux2 #(32) mem_to_reg(/*TODO*/WB.ALUResult, /*TODO*/WB.MemReadData, /*TODO*/WB.MemtoReg, MemtoRegOut);
 
   adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
   adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);

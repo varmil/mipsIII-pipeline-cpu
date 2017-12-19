@@ -28,6 +28,7 @@ module idex_stage(
   assign EX.Shamt = EX.ExtImmOut[10:6];
 
   always @(posedge CLK) begin
+    // control signals
     EX.ALUOp          <= (RST) ? 5'b0  : ((EX.Stall) ? EX.ALUOp         : ((ID.Stall | ID.Flush) ? 5'b0 : ID.ALUOp));
     EX.Link           <= (RST) ? 1'b0  : ((EX.Stall) ? EX.Link                                          : ID.Link);
     EX.ALUSrcImm      <= (RST) ? 1'b0  : ((EX.Stall) ? EX.ALUSrcImm                                     : ID.ALUSrcImm);
@@ -42,6 +43,7 @@ module idex_stage(
     EX.MemSignExtend  <= (RST) ? 1'b0  : ((EX.Stall) ? EX.MemSignExtend                                 : ID.MemSignExtend);
     EX.RegWrite       <= (RST) ? 1'b0  : ((EX.Stall) ? EX.RegWrite      : ((ID.Stall | ID.Flush) ? 1'b0 : ID.RegWrite));
     EX.MemtoReg       <= (RST) ? 1'b0  : ((EX.Stall) ? EX.MemtoReg                                      : ID.MemtoReg);
+
     // EX_ReverseEndian  <= (RST) ? 1'b0  : ((EX.Stall) ? EX_ReverseEndian                                 : ID_ReverseEndian);
     // EX_RestartPC      <= (RST) ? 32'b0 : ((EX.Stall) ? EX_RestartPC                                     : ID_RestartPC);
     // EX_IsBDS          <= (RST) ? 1'b0  : ((EX.Stall) ? EX_IsBDS                                         : ID_IsBDS);
@@ -51,7 +53,7 @@ module idex_stage(
     EX.ReadData2      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData2                                     : ID.ReadData2);
     EX.ExtImmOut      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ExtImmOut                                     : ID.ExtImmOut);
     // EX_Rs             <= (RST) ? 5'b0  : ((EX.Stall) ? EX_Rs                                            : ID_Rs);
-    // EX_Rt             <= (RST) ? 5'b0  : ((EX.Stall) ? EX_Rt                                            : ID_Rt);
+    EX.Rt             <= (RST) ? 5'b0  : ((EX.Stall) ? EX.Rt                                            : ID.Rt);
     // EX_WantRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_WantRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_WantRsByEX));
     // EX_NeedRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_NeedRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_NeedRsByEX));
     // EX_WantRtByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_WantRtByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_WantRtByEX));

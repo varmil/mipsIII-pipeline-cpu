@@ -1,5 +1,8 @@
 /*** ID (Instruction Decode) Signals ***/
 interface intf_id();
+  logic Stall;
+  logic Flush; //  == ID_Exception_Flush
+
   /*** MIPS Instruction and Components (ID Stage) ***/
   logic [31:0] ID_Instruction;
   wire  [5:0]  OpCode = ID_Instruction[31:26];
@@ -11,32 +14,19 @@ interface intf_id();
   wire  [25:0] JumpAddress = ID_Instruction[25:0];
   wire  [2:0]  Cp0_Sel = ID_Instruction[2:0];
 
-  logic Stall;
-  logic Flush; //  == ID_Exception_Flush
-  logic ID_Exception_Stall;
-  logic [1:0] ID_RsFwdSel, ID_RtFwdSel;
-  logic ID_NextIsDelay;
-  logic ID_CanErr, ID_ID_CanErr, ID_EX_CanErr, ID_M_CanErr;
-  logic ID_KernelMode;
-  logic ID_ReverseEndian;
-  logic ID_EXC_Sys, ID_EXC_Bp, ID_EXC_RI;
-  logic ID_PCSrc_Exc;
-  logic [31:0] ID_ExceptionPC;
-  logic [31:0] CP0_RegOut;
+  // logic ID_Exception_Stall;
+  // logic [1:0] ID_RsFwdSel, ID_RtFwdSel;
+  // logic ID_NextIsDelay;
+  // logic ID_CanErr, ID_ID_CanErr, ID_EX_CanErr, ID_M_CanErr;
+  // logic ID_KernelMode;
+  // logic ID_ReverseEndian;
+  // logic ID_EXC_Sys, ID_EXC_Bp, ID_EXC_RI;
+  // logic ID_PCSrc_Exc;
+  // logic [31:0] ID_ExceptionPC;
+  // logic [31:0] CP0_RegOut;
   logic [31:0] ID_RestartPC;
   logic ID_IsBDS;
   logic ID_IsFlushed;
-
-  // TODO: Implement for Hazard, now simply using ReadData
-  // logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
-  // logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
-  logic [31:0] ReadData1, ReadData2;
-
-  // core internal wire
-  logic [31:0] PCAdd4;
-  logic [31:0] SL2OutForPCBranch;
-  logic [31:0] PCBranchOut;
-  wire  [31:0] PCJumpAddress = {PCAdd4[31:28], JumpAddress[25:0], 2'b00};
 
   // Controller
   logic SignExtend;
@@ -51,6 +41,17 @@ interface intf_id();
 
   // Compare
   logic CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
+
+  // TODO: Implement for Hazard, now simply using ReadData
+  // logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
+  // logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
+  logic [31:0] ReadData1, ReadData2;
+
+  // core internal wire
+  logic [31:0] PCAdd4;
+  logic [31:0] SL2OutForPCBranch;
+  logic [31:0] PCBranchOut;
+  wire  [31:0] PCJumpAddress = {PCAdd4[31:28], JumpAddress[25:0], 2'b00};
 
   // wire init
   logic [31:0] ExtImmOut; // ID_Rd, ID_Shamt included here
