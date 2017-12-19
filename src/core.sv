@@ -23,10 +23,6 @@ module core (
 
 
 // --------------------------------------------------
-  /*** Register File ***/
-  wire [31:0] RegReadData1;
-  wire [31:0] RegReadData2;
-
   /*** internal signals ***/
   // wire [31:0] ID.PCBranchOut;
   // wire [31:0] IF.PCSrcOut;
@@ -40,9 +36,6 @@ module core (
   /*** MEM (Memory) Signals ***/
   wire M_Stall;
   wire M_Stall_Controller;
-
-  /*** wire init ***/
-  wire [31:0] WriteDataPre = RegReadData2;
 // --------------------------------------------------
 
 
@@ -82,7 +75,7 @@ module core (
     // write data
     MemtoRegOut,
     // read data
-    RegReadData1, RegReadData2
+    ID.ReadData1, ID.ReadData2
   );
   alu alu(
     // input
@@ -90,7 +83,7 @@ module core (
     EX.Stall,
     EX_ALUOp,
     ID.Shamt,
-    RegReadData1, ALUSrcOut, // A, B
+    EX.ReadData1, ALUSrcOut, // A, B
     // output
     ALUResult,
     EX_EXC_Ov,
@@ -110,8 +103,8 @@ module core (
   );
   /*** Condition Compare Unit ***/
   Compare Compare (
-    .A    (RegReadData1),
-    .B    (RegReadData2),
+    .A    (ID.ReadData1),
+    .B    (ID.ReadData2),
     .EQ   (ID.CmpEQ),
     .GZ   (ID.CmpGZ),
     .LZ   (ID.CmpLZ),
@@ -122,7 +115,7 @@ module core (
   memory_controller data_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
-    .DataIn        (WriteDataPre),
+    .DataIn        (MEM.WriteDataPre),
     .Address       (ALUResult),
     .MReadData     (ReadDataOriginal),
     .MemRead       (ID.MemRead),
@@ -135,8 +128,6 @@ module core (
     // .ReverseEndian (M_ReverseEndian),
     .LLSC          (ID.LLSC),
     .ERET          (ID.Eret),
-    // .Left          (M_Left),
-    // .Right         (M_Right),
     .M_Exception_Stall (1'b0),
     .IF_Stall      (1'b0),
     .DataOut       (ReadDataProcessed),
@@ -162,26 +153,32 @@ module core (
   );
   /*** Instruction Decode -> Execute Pipeline Stage ***/
   idex_stage idex_stage (
-      .CLK               (CLK),
-      .RST               (RST),
-      .ID                (ID.idex_in),
-      .EX                (EX.idex_out),
-      // Hazard & Forwarding
-      // .ID_WantRsByEX     (ID_DP_Hazards[3]),
-      // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
-      // .ID_WantRtByEX     (ID_DP_Hazards[1]),
-      // .ID_NeedRtByEX     (ID_DP_Hazards[0]),
-
-      .EX_ALUOp          (EX_ALUOp)
+    .CLK               (CLK),
+    .RST               (RST),
+    .ID                (ID.idex_in),
+    .EX                (EX.idex_out)
+    // Hazard & Forwarding
+    // .ID_WantRsByEX     (ID_DP_Hazards[3]),
+    // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
+    // .ID_WantRtByEX     (ID_DP_Hazards[1]),
+    // .ID_NeedRtByEX     (ID_DP_Hazards[0])
   );
+  /*** Execute -> Memory Pipeline Stage ***/
+  exmem_stage exmem_stage (
+    .CLK               (CLK),
+    .RST               (RST),
+    .EX                (EX.exmem_in),
+    .MEM               (MEM.exmem_out)
+  );
+
 
 
   /***
    common modules
   ***/
-  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, RegReadData1, ID.PCSrc, IF.PCSrcOut);
+  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
   mux2 #(5)  reg_dst(ID.Rt, ID.Rd, ID.RegDst, RegDstOut);
-  mux2 #(32) alu_src(RegReadData2, EX.ExtImmOut, EX.ALUSrcImm, ALUSrcOut);
+  mux2 #(32) alu_src(EX.ReadData2, EX.ExtImmOut, EX.ALUSrcImm, ALUSrcOut);
   mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, ID.MemtoReg, MemtoRegOut);
 
   adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);

@@ -11,15 +11,15 @@ interface intf_id();
   wire  [25:0] JumpAddress = ID_Instruction[25:0];
   wire  [2:0]  Cp0_Sel = ID_Instruction[2:0];
 
-  logic ID_Stall;
+  logic Stall;
+  logic Flush; //  == ID_Exception_Flush
+  logic ID_Exception_Stall;
   logic [1:0] ID_RsFwdSel, ID_RtFwdSel;
   logic ID_NextIsDelay;
   logic ID_CanErr, ID_ID_CanErr, ID_EX_CanErr, ID_M_CanErr;
   logic ID_KernelMode;
   logic ID_ReverseEndian;
   logic ID_EXC_Sys, ID_EXC_Bp, ID_EXC_RI;
-  logic ID_Exception_Stall;
-  logic ID_Exception_Flush;
   logic ID_PCSrc_Exc;
   logic [31:0] ID_ExceptionPC;
   logic [31:0] CP0_RegOut;
@@ -70,10 +70,10 @@ interface intf_id();
 
   // idex_stage
   modport idex_in(
-    input  ID_Exception_Flush,
-    input  ID_Stall,
-    input  ALUOp,
+    input  Stall,
+    input  Flush,
     // Control Signals
+    input  ALUOp,
     input  Link,
     input  ALUSrcImm,
     input  Trap,
@@ -103,7 +103,7 @@ interface intf_id();
 
   // IF_Flush and DP_Hazards are the rest wire
   modport controller(
-    // input ID_Stall,
+    // input Stall,
     // instruction input
     input OpCode,
     input Funct,
