@@ -213,6 +213,23 @@ module core (
   /***
    stages
   ***/
+  /*** Instruction Fetch -> Instruction Decode Stage Register ***/
+  ifid_stage ifid_stage (
+    .CLK             (CLK),
+    .RST             (RST),
+    .IF_Flush        (IF_Exception_Flush | IF_Flush),
+    .IF_Stall        (IF_Stall),
+    .ID_Stall        (ID_Stall),
+    .IF_Instruction  (IF_Instruction),
+    .IF_PCAdd4       (IF_PCAdd4),
+    .IF_PC           (IF_PCOut),
+    .IF_IsBDS        (IF_IsBDS),
+    .ID_Instruction  (Instruction),
+    .ID_PCAdd4       (ID_PCAdd4),
+    .ID_RestartPC    (ID_RestartPC),
+    .ID_IsBDS        (ID_IsBDS),
+    .ID_IsFlushed    (ID_IsFlushed)
+  );
   /*** Instruction Decode -> Execute Pipeline Stage ***/
   idex_stage idex_stage (
       .CLK               (CLK),
