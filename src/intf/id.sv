@@ -22,17 +22,19 @@ interface intf_id();
   logic ID_Exception_Flush;
   logic ID_PCSrc_Exc;
   logic [31:0] ID_ExceptionPC;
-  logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
-  logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
   logic [31:0] CP0_RegOut;
-  wire  [29:0] ID_SignExtImm = (SignExtend & Immediate[15]) ? {14'h3FFF, Immediate} : {14'h0000, Immediate};
-  wire  [31:0] ID_ImmLeftShift2 = {ID_SignExtImm[29:0], 2'b00};
   logic [31:0] ID_RestartPC;
   logic ID_IsBDS;
   logic ID_IsFlushed;
 
+  // TODO: Implement for Hazard, now simply using ReadData
+  // logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
+  // logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
+  logic [31:0] ReadData1, ReadData2;
+
   // core internal wire
   logic [31:0] PCAdd4;
+  logic [31:0] SL2OutForPCBranch;
   logic [31:0] PCBranchOut;
   wire  [31:0] PCJumpAddress = {PCAdd4[31:28], JumpAddress[25:0], 2'b00};
 
@@ -50,6 +52,13 @@ interface intf_id();
   // Compare
   logic CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
 
+  // wire init
+  logic [31:0] ExtImmOut; // ID_Rd, ID_Shamt included here
+  // wire  [29:0] ID_SignExtImm = (SignExtend & Immediate[15]) ? {16'hFFFF, Immediate} : {16'h0000, Immediate};
+  // wire  [31:0] ID_ImmLeftShift2 = {ID_SignExtImm[29:0], 2'b00};
+
+
+
   // ifid_stage
   modport ifid_out(
     output ID_Instruction,
@@ -63,12 +72,14 @@ interface intf_id();
   modport idex_in(
     input  ID_Exception_Flush,
     input  ID_Stall,
+    input  ALUOp,
     // Control Signals
     input  Link,
     input  ALUSrcImm,
+    input  Trap,
+    input  TrapCond,
     input  RegDst,
     input  LLSC,
-    input  ALUOp,
     input  MemRead,
     input  MemWrite,
     input  MemHalf,
@@ -76,22 +87,18 @@ interface intf_id();
     input  MemSignExtend,
     input  RegWrite,
     input  MemtoReg,
-    input  ID_ReverseEndian,
+    // input  ID_ReverseEndian,
     // Hazard & Forwarding
     input  Rs,
     input  Rt,
     // Exception Control/Info
-    input  ID_KernelMode,
-    input  ID_RestartPC,
-    input  ID_IsBDS,
-    input  ID_Trap,
-    input  ID_TrapCond,
-    input  ID_EX_CanErr,
-    input  ID_M_CanErr,
+    // input  ID_KernelMode,
+    // input  ID_RestartPC,
+    // input  ID_IsBDS,
     // Data Signals
-    input  ID_ReadData1_End,
-    input  ID_ReadData2_End,
-    input  ID_SignExtImm // ID_Rd, ID_Shamt included here
+    input  ReadData1,
+    input  ReadData2,
+    input  ExtImmOut
   );
 
   // IF_Flush and DP_Hazards are the rest wire

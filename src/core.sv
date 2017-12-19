@@ -8,7 +8,7 @@ module core (
   input logic [31:0] ReadDataOriginal,
 
   // to I-Memory
-  output logic [31:0] PC,
+  output logic [31:0] PCForMem,
   // to D-Memory
   output logic [31:0] ALUResult,    // address from ALU
   output logic [31:0] WriteData,    // data from register file
@@ -21,27 +21,19 @@ module core (
   `define PCIncrAmt   4
   `define PCInit      0
 
-  /*** parse instruction ***/
-  wire [5:0]  OpCode      = Instruction[31:26];
-  wire [4:0]  Rs          = Instruction[25:21];
-  wire [4:0]  Rt          = Instruction[20:16];
-  wire [4:0]  Rd          = Instruction[15:11];
-  wire [5:0]  Funct       = Instruction[5:0];
-  wire [15:0] Immediate   = Instruction[15:0];
-  wire [25:0] JumpAddress = Instruction[25:0];
-  wire [4:0]  Shamt       = Instruction[10:6];
 
+// --------------------------------------------------
   /*** Register File ***/
   wire [31:0] RegReadData1;
   wire [31:0] RegReadData2;
 
   /*** internal signals ***/
-  wire [31:0] ID.PCBranchOut;
-  wire [31:0] IF.PCSrcOut;
+  // wire [31:0] ID.PCBranchOut;
+  // wire [31:0] IF.PCSrcOut;
   wire [4:0]  RegDstOut;
   wire [31:0] MemtoRegOut;
-  wire [31:0] ExtImmOut;
-  wire [31:0] SL2ForPCBranchOut;
+  // wire [31:0] ID.ExtImmOut;
+  // wire [31:0] ID.SL2OutForPCBranch;
   wire [31:0] ALUSrcOut;
   wire [31:0] ReadDataProcessed;
 
@@ -51,21 +43,24 @@ module core (
 
   /*** wire init ***/
   wire [31:0] WriteDataPre = RegReadData2;
+// --------------------------------------------------
+
+
 
   /*** IF (Instruction Fetch) Signals ***/
   IF intf_if();
+  assign IF.IF_Instruction = (IF.IF_Stall) ? 32'h0000_0000 : Instruction;
+  assign PCForMem = IF.PCOut;
 
   /*** ID (Instruction Decode) Signals ***/
   ID intf_id();
 
   /*** EX (Execute) Signals ***/
-  wire EX_ALU_Stall, EX_Stall;
-  // wire [1:0] EX_RsFwdSel, EX_RtFwdSel;
-  // wire EX_Link;
-  // wire [1:0] EX_LinkRegDst;
-  // wire EX_ALUSrcImm;
+  wire EX_ALU_Stall;
   wire [4:0] EX_ALUOp;
   wire EX_EXC_Ov;
+
+  EX intf_ex();
 
 
   /*** Other Signals ***/
@@ -75,7 +70,11 @@ module core (
   /***
    block modules
   ***/
-  program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, IF.PCSrcOut, PC);
+  program_counter #(.INIT(`PCInit)) program_counter(
+    CLK, RST,
+    IF.PCSrcOut,
+    IF.PCOut
+  );
   register_file register_file(
     CLK, ID.RegWrite,
     // read reg num1, 2, write reg num
@@ -88,9 +87,9 @@ module core (
   alu alu(
     // input
     CLK, RST,
-    EX_Stall,
+    EX.Stall,
     EX_ALUOp,
-    Shamt,
+    ID.Shamt,
     RegReadData1, ALUSrcOut, // A, B
     // output
     ALUResult,
@@ -98,16 +97,16 @@ module core (
     EX_ALU_Stall
   );
   controller controller(
-    .ID         (ID.controller),
-    .IF_Flush   (IF.IF_Flush),
-    .DP_Hazards (ID_DP_Hazards)
+    .ID         (ID.controller)
+    // .IF_Flush   (IF.IF_Flush),
+    // .DP_Hazards (ID_DP_Hazards)
   );
   /*** Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
     // input
     EX_ALU_Stall,
     // output
-    EX_Stall
+    EX.Stall
   );
   /*** Condition Compare Unit ***/
   Compare Compare (
@@ -166,13 +165,13 @@ module core (
       .CLK               (CLK),
       .RST               (RST),
       .ID                (ID.idex_in),
+      .EX                (EX.idex_out),
       // Hazard & Forwarding
-      .ID_WantRsByEX     (ID_DP_Hazards[3]),
-      .ID_NeedRsByEX     (ID_DP_Hazards[2]),
-      .ID_WantRtByEX     (ID_DP_Hazards[1]),
-      .ID_NeedRtByEX     (ID_DP_Hazards[0]),
+      // .ID_WantRsByEX     (ID_DP_Hazards[3]),
+      // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
+      // .ID_WantRtByEX     (ID_DP_Hazards[1]),
+      // .ID_NeedRtByEX     (ID_DP_Hazards[0]),
 
-      .EX_Stall          (EX_Stall),
       .EX_ALUOp          (EX_ALUOp)
   );
 
@@ -182,13 +181,13 @@ module core (
   ***/
   mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, RegReadData1, ID.PCSrc, IF.PCSrcOut);
   mux2 #(5)  reg_dst(ID.Rt, ID.Rd, ID.RegDst, RegDstOut);
-  mux2 #(32) alu_src(RegReadData2, ExtImmOut, ID.ALUSrc, ALUSrcOut);
+  mux2 #(32) alu_src(RegReadData2, EX.ExtImmOut, EX.ALUSrcImm, ALUSrcOut);
   mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, ID.MemtoReg, MemtoRegOut);
 
-  adder #(32) pc_plus4(PC, `PCIncrAmt, IF.PCAdd4);
-  adder #(32) pc_branch(ID.PCAdd4, SL2ForPCBranchOut, ID.PCBranchOut);
+  adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
+  adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);
 
-  sign_or_zero_extender ext_imm(ID.Immediate, ID.SignExtend, ExtImmOut);
-  sl2 sl2_for_pc_branch(ExtImmOut, SL2ForPCBranchOut);
+  sign_or_zero_extender ext_imm(ID.Immediate, ID.SignExtend, ID.ExtImmOut);
+  sl2 sl2_for_pc_branch(ID.ExtImmOut, ID.SL2OutForPCBranch);
 
 endmodule

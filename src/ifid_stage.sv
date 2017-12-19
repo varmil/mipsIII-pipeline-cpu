@@ -32,9 +32,9 @@ module IFID_Stage(
     always @(posedge CLK) begin
         ID.ID_Instruction <= (RST) ? 32'b0 : ((ID.ID_Stall) ? ID.ID_Instruction : ((IF.IF_Stall | IF.IF_Flush) ? 32'b0 : IF.IF_Instruction));
         ID.PCAdd4      <= (RST) ? 32'b0 : ((ID.ID_Stall) ? ID.PCAdd4                                       : IF.PCAdd4);
-        ID.ID_IsBDS       <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsBDS                                        : IF.IF_IsBDS);
-        ID.ID_RestartPC   <= (RST) ? 32'b0 : ((ID.ID_Stall  | IF.IF_IsBDS) ? ID.ID_RestartPC                     : IF.IF_PC);
-        ID.ID_IsFlushed   <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsFlushed                                    : IF.IF_Flush);
+        // ID.ID_IsBDS       <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsBDS                                        : IF.IF_IsBDS);
+        ID.ID_RestartPC   <= (RST) ? 32'b0 : ((ID.ID_Stall  | IF.IF_IsBDS) ? ID.ID_RestartPC                     : IF.PCOut);
+        // ID.ID_IsFlushed   <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsFlushed                                    : IF.IF_Flush);
     end
 
 endmodule
