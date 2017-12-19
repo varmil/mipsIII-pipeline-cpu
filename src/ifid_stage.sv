@@ -13,21 +13,8 @@
 module IFID_Stage(
   input  CLK,
   input  RST,
-  input  IF_Flush,
-  input  IF_Stall,
-  input  ID_Stall,
-  // Control Signals
-  input  [31:0] IF_Instruction,
-  // Data Signals
-  input  [31:0] IF_PCAdd4,
-  input  [31:0] IF_PC,
-  input  IF_IsBDS,
-  // ------------------
-  output reg [31:0] ID_Instruction,
-  output reg [31:0] ID_PCAdd4,
-  output reg [31:0] ID_RestartPC,
-  output reg ID_IsBDS,
-  output reg ID_IsFlushed
+  intf_if.ifid_in  IF,
+  intf_id.ifid_out ID
 );
 
 
@@ -43,11 +30,11 @@ module IFID_Stage(
     ***/
 
     always @(posedge CLK) begin
-        ID_Instruction <= (RST) ? 32'b0 : ((ID_Stall) ? ID_Instruction : ((IF_Stall | IF_Flush) ? 32'b0 : IF_Instruction));
-        ID_PCAdd4      <= (RST) ? 32'b0 : ((ID_Stall) ? ID_PCAdd4                                       : IF_PCAdd4);
-        ID_IsBDS       <= (RST) ? 1'b0  : ((ID_Stall) ? ID_IsBDS                                        : IF_IsBDS);
-        ID_RestartPC   <= (RST) ? 32'b0 : ((ID_Stall | IF_IsBDS) ? ID_RestartPC                         : IF_PC);
-        ID_IsFlushed   <= (RST) ? 1'b0  : ((ID_Stall) ? ID_IsFlushed                                    : IF_Flush);
+        ID.ID_Instruction <= (RST) ? 32'b0 : ((ID.ID_Stall) ? ID.ID_Instruction : ((IF.IF_Stall | IF.IF_Flush) ? 32'b0 : IF.IF_Instruction));
+        ID.ID_PCAdd4      <= (RST) ? 32'b0 : ((ID.ID_Stall) ? ID.ID_PCAdd4                                       : IF.IF_PCAdd4);
+        ID.ID_IsBDS       <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsBDS                                        : IF.IF_IsBDS);
+        ID.ID_RestartPC   <= (RST) ? 32'b0 : ((ID.ID_Stall  | IF.IF_IsBDS) ? ID.ID_RestartPC                     : IF.IF_PC);
+        ID.ID_IsFlushed   <= (RST) ? 1'b0  : ((ID.ID_Stall) ? ID.ID_IsFlushed                                    : IF.IF_Flush);
     end
 
 endmodule

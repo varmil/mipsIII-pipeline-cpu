@@ -1,44 +1,48 @@
 module controller (
-  // instruction
-  input logic [5:0] OpCode,
-  input logic [5:0] Funct,
-  input logic [4:0] Rs,        // used to differentiate mfc0 and mtc0
-  input logic [4:0] Rt,        // used to differentiate bgez,bgezal,bltz,bltzal,teqi,tgei,tgeiu,tlti,tltiu,tnei
+  // // instruction
+  // input logic [5:0] OpCode,
+  // input logic [5:0] Funct,
+  // input logic [4:0] Rs,        // used to differentiate mfc0 and mtc0
+  // input logic [4:0] Rt,        // used to differentiate bgez,bgezal,bltz,bltzal,teqi,tgei,tgeiu,tlti,tltiu,tnei
+  //
+  // // Branch
+  // input  Cmp_EQ,
+  // input  Cmp_GZ,
+  // input  Cmp_GEZ,
+  // input  Cmp_LZ,
+  // input  Cmp_LEZ,
+  //
+  // // for some specific operations output
+  // output logic SignExtend,
+  // output logic Mfc0,
+  // output logic Mtc0,
+  // output logic Eret,
+  //
+  // // Datapath output
+  // output logic [1:0] PCSrc   ,
+  // output logic Link          ,
+  // output logic ALUSrc        ,
+  // output logic Trap          ,
+  // output logic TrapCond      ,
+  // output logic RegDst        ,
+  // output logic LLSC          ,
+  // output logic MemRead       ,
+  // output logic MemWrite      ,
+  // output logic MemHalf       ,
+  // output logic MemByte       ,
+  // output logic MemSignExtend ,
+  // output logic RegWrite      ,
+  // output logic MemtoReg      ,
+  //
+  // // ALU Operations
+  // output logic [4:0] ALUOp
 
-  // Branch
-  input  Cmp_EQ,
-  input  Cmp_GZ,
-  input  Cmp_GEZ,
-  input  Cmp_LZ,
-  input  Cmp_LEZ,
-
-  // for some specific operations output
-  output logic SignExtend,
-  output logic Movn,
-  output logic Movz,
-  output logic Mfc0,
-  output logic Mtc0,
-  output logic Eret,
-
-  // Datapath output
-  output logic [1:0] PCSrc   ,
-  output logic Link          ,
-  output logic ALUSrc        ,
-  output logic Movc          ,
-  output logic Trap          ,
-  output logic TrapCond      ,
-  output logic RegDst        ,
-  output logic LLSC          ,
-  output logic MemRead       ,
-  output logic MemWrite      ,
-  output logic MemHalf       ,
-  output logic MemByte       ,
-  output logic MemSignExtend ,
-  output logic RegWrite      ,
-  output logic MemtoReg      ,
-
-  // ALU Operations
-  output logic [4:0] ALUOp
+  //
+  // TODO: prefix ID_ for all logics
+  //
+  intf_id.ifid_out ID,
+  output IF_Flush,
+  output reg [7:0] DP_Hazards
 );
 
   `include "parameters.sv"
@@ -47,7 +51,7 @@ module controller (
   assign PCSrc[0]      = Datapath[14];
   assign Link          = Datapath[13];
   assign ALUSrc        = Datapath[12];
-  assign Movc          = Datapath[11];
+  wire   Movc          = Datapath[11];
   assign Trap          = Datapath[10];
   assign TrapCond      = Datapath[9];
   assign RegDst        = Datapath[8];
@@ -338,10 +342,6 @@ module controller (
   // Sign- or Zero-Extension Control. The only ops that require zero-extension are
   // Andi, Ori, and Xori. The following also zero-extends 'lui', however it does not alter the effect of lui.
   assign SignExtend = (OpCode[5:2] != 4'b0011);
-
-  // Move Conditional
-  assign Movn = Movc &  Funct[0];
-  assign Movz = Movc & ~Funct[0];
 
   // Coprocessor 0 (Mfc0, Mtc0) control signals.
   assign Mfc0 = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_MF));

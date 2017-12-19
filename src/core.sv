@@ -33,8 +33,6 @@ module core (
 
   /*** Controller ***/
   wire SignExtend    ;
-  wire Movn          ;
-  wire Movz          ;
   wire Mfc0          ;
   wire Mtc0          ;
   wire Eret          ;
@@ -43,7 +41,6 @@ module core (
   wire [1:0] PCSrc   ;
   wire Link          ;
   wire ALUSrc        ;
-  wire Movc          ;
   wire Trap          ;
   wire TrapCond      ;
   wire RegDst        ;
@@ -83,18 +80,10 @@ module core (
   wire [31:0] WriteDataPre = RegReadData2;
 
   /*** IF (Instruction Fetch) Signals ***/
-  intf_if intf_if();
+  IF intf_if();
 
   /*** ID (Instruction Decode) Signals ***/
-  wire ID_Stall;
-  //  wire [1:0] ID_PCSrc;
-  //  wire [1:0] ID_RsFwdSel, ID_RtFwdSel;
-  //  wire ID_Link, ID_Movn, ID_Movz;
-  //  wire ID_SignExtend;
-  //  wire ID_LLSC;
-  //  wire ID_RegDst, ID_ALUSrcImm, ID_MemWrite, ID_MemRead, ID_MemByte, ID_MemHalf, ID_MemSignExtend, ID_RegWrite, ID_MemtoReg;
-  wire [4:0] ID_ALUOp;
-  wire ID_Exception_Flush;
+  ID intf_id();
 
   /*** EX (Execute) Signals ***/
   wire EX_ALU_Stall, EX_Stall;
@@ -104,6 +93,10 @@ module core (
   // wire EX_ALUSrcImm;
   wire [4:0] EX_ALUOp;
   wire EX_EXC_Ov;
+
+
+  /*** Other Signals ***/
+  wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
 
 
   /***
@@ -132,7 +125,9 @@ module core (
     EX_ALU_Stall
   );
   controller controller(
-    .intf_id         (intf_id.controller)
+    .ID         (ID.controller),
+    .IF_Flush   (IF.IF_Flush),
+    .DP_Hazards (ID_DP_Hazards)
   );
   /*** Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
@@ -190,14 +185,19 @@ module core (
   ifid_stage ifid_stage (
     .CLK             (CLK),
     .RST             (RST),
-    .intf_if         (intf_if.ifid_in),
-    .intf_id         (intf_id.ifid_out)
+    .IF              (IF.ifid_in),
+    .ID              (ID.ifid_out)
   );
   /*** Instruction Decode -> Execute Pipeline Stage ***/
   idex_stage idex_stage (
       .CLK               (CLK),
       .RST               (RST),
-      .intf_id           (intf_id.idex_in),
+      .ID                (ID.idex_in),
+      // Hazard & Forwarding
+      .ID_WantRsByEX     (ID_DP_Hazards[3]),
+      .ID_NeedRsByEX     (ID_DP_Hazards[2]),
+      .ID_WantRtByEX     (ID_DP_Hazards[1]),
+      .ID_NeedRtByEX     (ID_DP_Hazards[0]),
 
       .EX_Stall          (EX_Stall),
       // .EX_Link           (EX_Link),
