@@ -38,6 +38,8 @@ interface intf_ex();
   logic ExcOv;
 
   modport idex_out(
+    input Stall,
+
     // control signals
     output ALUOp,
     output Link,
@@ -65,6 +67,9 @@ interface intf_ex();
   );
 
   modport exmem_in(
+    input Stall,
+    input Flush,
+
     // control signals
     input Trap,
     input TrapCond,
@@ -76,7 +81,7 @@ interface intf_ex();
     input MemSignExtend,
     input RegWrite,
     input MemtoReg,
-
+    // data
     input ALUResult,
     input ReadData2,
     input RegDstOut

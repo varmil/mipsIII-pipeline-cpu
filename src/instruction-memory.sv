@@ -12,7 +12,7 @@ module instruction_memory #(parameter WIDTH = 32) (
 
   initial begin
     // $readmemh("src/memfile.dat", RAM);
-    $readmemh("testcase/memory/memory.data", RAM);
+    $readmemh("testcase/logic/logic.data", RAM);
   end
 
   assign ir = RAM[addressBlock];

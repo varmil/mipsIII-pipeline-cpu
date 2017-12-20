@@ -1,7 +1,7 @@
 module exmem_stage(
   input logic CLK, RST,
-  intf_ex.exmem_in EX,
-  intf_mem.exmem_out  MEM
+  intf_ex.exmem_in   EX,
+  intf_mem.exmem_out MEM
 );
 
   always @(posedge CLK) begin

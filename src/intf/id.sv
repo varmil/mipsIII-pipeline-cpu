@@ -1,18 +1,34 @@
+// NOTE: minimum implementation
+
 /*** ID (Instruction Decode) Signals ***/
 interface intf_id();
   logic Stall;
   logic Flush; //  == ID_Exception_Flush
 
+  // .ID - EX (control signals)
+  logic SignExtend;
+  logic Mfc0, Mtc0, Eret;
+  logic [4:0] ALUOp;
+  logic [1:0] PCSrc;
+  logic Link;
+  logic ALUSrcImm;
+  logic Trap, TrapCond;
+  logic RegDst;
+  logic LLSC;
+  logic MemRead, MemWrite, MemHalf, MemByte, MemSignExtend;
+  logic RegWrite;
+  logic MemtoReg;
+
   /*** MIPS Instruction and Components (ID Stage) ***/
-  logic [31:0] ID_Instruction;
-  wire  [5:0]  OpCode = ID_Instruction[31:26];
-  wire  [4:0]  Rs = ID_Instruction[25:21];
-  wire  [4:0]  Rt = ID_Instruction[20:16];
-  wire  [4:0]  Rd = ID_Instruction[15:11];
-  wire  [5:0]  Funct = ID_Instruction[5:0];
-  wire  [15:0] Immediate = ID_Instruction[15:0];
-  wire  [25:0] JumpAddress = ID_Instruction[25:0];
-  wire  [2:0]  Cp0_Sel = ID_Instruction[2:0];
+  logic [31:0] Instruction;
+  wire  [5:0]  OpCode = Instruction[31:26];
+  wire  [4:0]  Rs = Instruction[25:21];
+  wire  [4:0]  Rt = Instruction[20:16];
+  wire  [4:0]  Rd = Instruction[15:11];
+  wire  [5:0]  Funct = Instruction[5:0];
+  wire  [15:0] Immediate = Instruction[15:0];
+  wire  [25:0] JumpAddress = Instruction[25:0];
+  wire  [2:0]  Cp0_Sel = Instruction[2:0];
 
   // logic ID_Exception_Stall;
   // logic [1:0] ID_RsFwdSel, ID_RtFwdSel;
@@ -24,20 +40,9 @@ interface intf_id();
   // logic ID_PCSrc_Exc;
   // logic [31:0] ID_ExceptionPC;
   // logic [31:0] CP0_RegOut;
-  logic [31:0] ID_RestartPC;
-  logic ID_IsBDS;
-  logic ID_IsFlushed;
-
-  // Controller
-  logic SignExtend;
-  logic Mfc0, Mtc0, Eret;
-  logic [4:0] ALUOp;
-  // Datapath
-  logic [1:0] PCSrc;
-  logic Link;
-  logic ALUSrcImm;
-  logic Trap, TrapCond;
-  logic RegDst, LLSC, MemRead, MemWrite, MemHalf, MemByte, MemSignExtend, RegWrite, MemtoReg;
+  // logic [31:0] ID_RestartPC;
+  // logic ID_IsBDS;
+  // logic ID_IsFlushed;
 
   // Compare
   logic CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
@@ -62,17 +67,17 @@ interface intf_id();
 
   // ifid_stage
   modport ifid_out(
-    output ID_Instruction,
-    output PCAdd4,
-    output ID_RestartPC,
-    output ID_IsBDS,
-    output ID_IsFlushed
+    input  Stall,
+
+    output Instruction,
+    output PCAdd4
   );
 
   // idex_stage
   modport idex_in(
     input  Stall,
     input  Flush,
+
     // Control Signals
     input  ALUOp,
     input  Link,
@@ -89,6 +94,7 @@ interface intf_id();
     input  RegWrite,
     input  MemtoReg,
     // input  ID_ReverseEndian,
+
     // Hazard & Forwarding
     input  Rs,
     input  Rt,
@@ -96,6 +102,7 @@ interface intf_id();
     // input  ID_KernelMode,
     // input  ID_RestartPC,
     // input  ID_IsBDS,
+
     // Data Signals
     input  ReadData1,
     input  ReadData2,

@@ -1,15 +1,3 @@
-/***
- The purpose of a pipeline register is to capture data from one pipeline stage
- and provide it to the next pipeline stage. This creates at least one clock cycle
- of delay, but reduces the combinatorial path length of signals which allows for
- higher clock speeds.
- All pipeline registers update unless the forward stage is stalled. When this occurs
- or when the current stage is being flushed, the forward stage will receive data that
- is effectively a NOP and causes nothing to happen throughout the remaining pipeline
- traversal. In other words:
- A stall masks all control signals to forward stages. A flush permanently clears
- control signals to forward stages (but not certain data for exception purposes).
-***/
 module idex_stage(
   input logic CLK, RST,
   intf_id.idex_in  ID,

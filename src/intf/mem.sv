@@ -4,6 +4,7 @@
 interface intf_mem();
   logic Stall;
   logic StallController; // output from D-Memory
+  logic ExceptionFlush;  // from CP0
 
   // control signals
   logic Trap;
@@ -17,15 +18,20 @@ interface intf_mem();
   logic RegWrite;
   logic MemtoReg;
 
-  // EX - MEM
-  logic [31:0] ALUResult;
+  // EX- MEM
   logic [31:0] ReadData2;
+
+  // EX - MEM - WB
+  logic [31:0] ALUResult;
   logic [4:0]  RegDstOut;
 
-  // MEM -WB
+  // .MEM - WB
   logic [31:0] MemReadData;
 
+
   modport exmem_out(
+    input Stall,
+
     // control signals
     output Trap,
     output TrapCond,
@@ -44,6 +50,13 @@ interface intf_mem();
   );
 
   modport memwb_in(
+    input Stall,
+    input ExceptionFlush,
+
+    // control signals
+    input RegWrite,
+    input MemtoReg,
+    // data
     input ALUResult,
     input RegDstOut,
     input MemReadData

@@ -23,24 +23,9 @@ module core (
   `define PCIncrAmt   4
   `define PCInit      0
 
-
-// --------------------------------------------------
-  /*** internal signals ***/
-  // wire [31:0] ID.PCBranchOut;
-  // wire [31:0] IF.PCSrcOut;
-  // wire [4:0]  RegDstOut;
-  wire [31:0] MemtoRegOut;
-  // wire [31:0] ID.ExtImmOut;
-  // wire [31:0] ID.SL2OutForPCBranch;
-  // wire [31:0] EX.ALUSrcOut;
-  // wire [31:0] MemReadData;
-// --------------------------------------------------
-
-
-
   /*** IF (Instruction Fetch) Signals ***/
   IF intf_if();
-  assign IF.IF_Instruction = (IF.IF_Stall) ? 32'h0000_0000 : Instruction;
+  assign IF.Instruction = (IF.Stall) ? 32'h0000_0000 : Instruction;
   assign PCForMem = IF.PCOut;
 
   /*** ID (Instruction Decode) Signals ***/
@@ -52,6 +37,9 @@ module core (
   /*** Memory Signals ***/
   MEM intf_mem();
   assign DataMemAddress = MEM.ALUResult;
+
+  /*** Write Back Signals ***/
+  WB intf_wb();
 
   /*** Other Signals ***/
   wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
@@ -66,11 +54,11 @@ module core (
     IF.PCOut
   );
   register_file register_file(
-    CLK, ID.RegWrite,
+    CLK, WB.RegWrite,
     // read reg num1, 2, write reg num
-    ID.Rs, ID.Rt, /*TODO*/WB.RegDstOut,
+    ID.Rs, ID.Rt, WB.RegDstOut,
     // write data
-    MemtoRegOut,
+    WB.MemtoRegOut,
     // read data
     ID.ReadData1, ID.ReadData2
   );
@@ -167,6 +155,13 @@ module core (
     .EX                (EX.exmem_in),
     .MEM               (MEM.exmem_out)
   );
+  /*** Memory -> Write Back Pipeline Stage ***/
+  memwb_stage memwb_stage (
+    .CLK               (CLK),
+    .RST               (RST),
+    .MEM               (MEM.memwb_in),
+    .WB                (WB.memwb_out)
+  );
 
 
   /***
@@ -175,7 +170,7 @@ module core (
   mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
   mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
   mux2 #(32) alu_src(EX.ReadData2, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
-  mux2 #(32) mem_to_reg(/*TODO*/WB.ALUResult, /*TODO*/WB.MemReadData, /*TODO*/WB.MemtoReg, MemtoRegOut);
+  mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
 
   adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
   adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);
