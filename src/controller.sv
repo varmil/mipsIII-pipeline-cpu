@@ -9,7 +9,7 @@ module controller (
   reg [15:0] Datapath;
   assign ID.PCSrc[0]      = Datapath[14];
   assign ID.Link          = Datapath[13];
-  assign ID.ALUSrc        = Datapath[12];
+  assign ID.ALUSrcImm     = Datapath[12];
   wire   Movc             = Datapath[11];
   assign ID.Trap          = Datapath[10];
   assign ID.TrapCond      = Datapath[9];
@@ -286,12 +286,12 @@ module controller (
    ***/
 
   // Branch Detection: Options are mutually exclusive.
-  assign Branch_EQ  =  ID.OpCode[2] & ~ID.OpCode[1] & ~ID.OpCode[0] &  ID.Cmp_EQ;
-  assign Branch_GTZ =  ID.OpCode[2] &  ID.OpCode[1] &  ID.OpCode[0] &  ID.Cmp_GZ;
-  assign Branch_LEZ =  ID.OpCode[2] &  ID.OpCode[1] & ~ID.OpCode[0] &  ID.Cmp_LEZ;
-  assign Branch_NEQ =  ID.OpCode[2] & ~ID.OpCode[1] &  ID.OpCode[0] & ~ID.Cmp_EQ;
-  assign Branch_GEZ = ~ID.OpCode[2] &  ID.Rt[0]     &  ID.Cmp_GEZ;
-  assign Branch_LTZ = ~ID.OpCode[2] & ~ID.Rt[0]     &  ID.Cmp_LZ;
+  assign Branch_EQ  =  ID.OpCode[2] & ~ID.OpCode[1] & ~ID.OpCode[0] &  ID.CmpEQ;
+  assign Branch_GTZ =  ID.OpCode[2] &  ID.OpCode[1] &  ID.OpCode[0] &  ID.CmpGZ;
+  assign Branch_LEZ =  ID.OpCode[2] &  ID.OpCode[1] & ~ID.OpCode[0] &  ID.CmpLEZ;
+  assign Branch_NEQ =  ID.OpCode[2] & ~ID.OpCode[1] &  ID.OpCode[0] & ~ID.CmpEQ;
+  assign Branch_GEZ = ~ID.OpCode[2] &  ID.Rt[0]     &  ID.CmpGEZ;
+  assign Branch_LTZ = ~ID.OpCode[2] & ~ID.Rt[0]     &  ID.CmpLZ;
   assign Branch = Branch_EQ | Branch_GTZ | Branch_LEZ | Branch_NEQ | Branch_GEZ | Branch_LTZ;
   assign ID.PCSrc[1] = (Datapath[15] & ~Datapath[14]) ? Branch : Datapath[15];
 

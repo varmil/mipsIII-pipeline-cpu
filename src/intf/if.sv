@@ -11,6 +11,7 @@ interface intf_if();
 
   // internal wire
   logic [31:0] PCSrcOut;
+  logic [31:0] PCOut;
 
   // ifid_stage
   modport ifid_in(

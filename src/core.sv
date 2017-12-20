@@ -24,22 +24,22 @@ module core (
   `define PCInit      0
 
   /*** IF (Instruction Fetch) Signals ***/
-  IF intf_if();
+  intf_if IF();
   assign IF.Instruction = (IF.Stall) ? 32'h0000_0000 : Instruction;
   assign PCForMem = IF.PCOut;
 
   /*** ID (Instruction Decode) Signals ***/
-  ID intf_id();
+  intf_id ID();
 
   /*** EX (Execute) Signals ***/
-  EX intf_ex();
+  intf_ex EX();
 
   /*** Memory Signals ***/
-  MEM intf_mem();
+  intf_mem MEM();
   assign DataMemAddress = MEM.ALUResult;
 
   /*** Write Back Signals ***/
-  WB intf_wb();
+  intf_wb WB();
 
   /*** Other Signals ***/
   wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
@@ -67,7 +67,7 @@ module core (
     CLK, RST,
     EX.Stall,
     EX.ALUOp,
-    ID.Shamt,
+    EX.Shamt,
     EX.ReadData1, EX.ALUSrcOut, // A, B
     // output
     EX.ALUResult,
