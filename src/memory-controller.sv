@@ -108,6 +108,7 @@ module memory_controller(
     wire WriteCondition = MemWrite & ~(EXC_KernelMem | EXC_Word | EXC_Half) & ~LLSC_MemWrite_Mask;
     wire ReadCondition  = MemRead  & ~(EXC_KernelMem | EXC_Word | EXC_Half);
 
+    // Enable wire continues to go high duaring memory access
     reg RW_Mask;
     always @(posedge CLK) begin
         RW_Mask <= (RST) ? 1'b0 : (((MemWrite | MemRead) & DataMem_Ack) ? 1'b1 : ((~M_Stall & ~IF_Stall) ? 1'b0 : RW_Mask));

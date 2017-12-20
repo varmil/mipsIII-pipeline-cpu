@@ -1,6 +1,6 @@
 module controller (
-  intf_id.controller ID
-  // output IF_Flush,
+  intf_id.controller ID,
+  output IF_Flush
   // output reg [7:0] DP_Hazards
 );
 
@@ -307,5 +307,13 @@ module controller (
   assign ID.Mtc0 = ((ID.OpCode == `Op_Type_CP0) && (ID.Rs == `OpRs_MT));
   assign ID.Eret = ((ID.OpCode == `Op_Type_CP0) && (ID.Rs == `OpRs_ERET) && (ID.Funct == `Funct_ERET));
 
+
+  /* In MIPS32, all Branch and Jump operations execute the Branch Delay Slot,
+   * or next instruction, regardless if the branch is taken or not. The exception
+   * is the "Branch Likely" instruction group. These are deprecated, however, and not
+   * implemented here. "IF_Flush" is defined to allow for the cancelation of a
+   * Branch Delay Slot should these be implemented later.
+   */
+  assign IF_Flush = 0;
 
 endmodule

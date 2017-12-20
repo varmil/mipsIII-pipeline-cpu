@@ -1,7 +1,11 @@
-// NOTE: if memory width is 16bit, then ir is concated 2 blocks (16+16)
+// NOTE: if memory width is 16bit, then Instr is concated 2 blocks (16+16)
 module instruction_memory #(parameter WIDTH = 32) (
+  input logic CLK,
   input logic [31:0] address,
-  output logic [31:0] ir
+  input logic ReadEnable,
+
+  output logic Ack,
+  output logic [31:0] Instr
 );
 
   parameter ADDRESS_DIV = WIDTH / 8; // address is a byte unit
@@ -15,5 +19,11 @@ module instruction_memory #(parameter WIDTH = 32) (
     $readmemh("testcase/logic/logic.data", RAM);
   end
 
-  assign ir = RAM[addressBlock];
-endmodule // instruction_memory
+  // ACK (NOTE: Ack after 1 cycle because R/W operation is completed immediately)
+  always @ (posedge CLK) begin
+    if (ReadEnable) Ack <= 1'b1;
+    if (Ack) Ack <= 1'b0;
+  end
+
+  assign Instr = (ReadEnable) ? RAM[addressBlock] : 'Z;
+endmodule

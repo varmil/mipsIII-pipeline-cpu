@@ -1,22 +1,26 @@
 // NOTE: RegDst names EX_RtRd. Impl -- see https://github.com/grantae/mips32r1_core/blob/master/mips32r1/Processor.v#L525-L532
+// Memory Enable wire continues to go high duaring memory access
 
 // The processor
 module core (
   // from board
   input  logic CLK, RST,
   // from I-Memory
+  input logic        InstrMemAck,
   input logic [31:0] Instruction,
   // from D-Memory
+  input logic        DataMemAck,
   input logic [31:0] ReadDataOriginal,
 
   // to I-Memory
-  output logic [31:0] PCForMem,
+  output logic [31:0] PCForInstrMem,
+  output logic        InstrMemReadEnable,
   // to D-Memory
   output logic [31:0] DataMemAddress,    // address from ALU
   output logic [31:0] WriteData,         // data from register file
-  output logic        MemReadEnable,
-  output logic        MemWriteEnable,
-  output logic [3:0]  MemByteEnable    // 4-bit Write, one for each byte in word.
+  output logic        DataMemReadEnable,
+  output logic        DataMemWriteEnable,
+  output logic [3:0]  DataMemByteEnable    // 4-bit Write, one for each byte in word.
 );
 
   /*** Constant ***/
@@ -26,7 +30,7 @@ module core (
   /*** IF (Instruction Fetch) Signals ***/
   intf_if IF();
   assign IF.Instruction = (IF.Stall) ? 32'h0000_0000 : Instruction;
-  assign PCForMem = IF.PCOut;
+  assign PCForInstrMem = IF.PCOut;
 
   /*** ID (Instruction Decode) Signals ***/
   intf_id ID();
@@ -43,6 +47,18 @@ module core (
 
   /*** Other Signals ***/
   wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
+
+  // External Memory Interface
+  // * IReadMask stays 0 while accessing I-Memory and until finished it (== ACK coming)
+  // * Basically I-Memory continue to read the data
+  //   because IRead continue to be asserted except in the case of Ack coming
+  reg IRead, IReadMask;
+  always @(posedge CLK) begin
+    IRead     <= (RST) ? 1'b1 : ~InstrMemAck;
+    IReadMask <= (RST) ? 1'b0 : ((IRead & InstrMemAck) ? 1'b1 : ((~IF.Stall) ? 1'b0 : IReadMask));
+  end
+  assign InstrMemReadEnable = IRead & ~IReadMask;
+
 
 
   /***
@@ -75,16 +91,28 @@ module core (
     EX.ALUStall
   );
   controller controller(
-    .ID         (ID.controller)
-    // .IF_Flush   (IF.IF_Flush),
+    .ID         (ID.controller),
+    .IF_Flush   (IF.Flush)
     // .DP_Hazards (ID_DP_Hazards)
   );
-  /*** Hazard and Forward Control Unit ***/
+  /*** TODO: Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
-    // input
-    EX.ALUStall,
-    // output
-    EX.Stall
+    /*** input ***/
+    // I-Memory signal for IF_Stall
+    .InstMem_Read        (InstrMemReadEnable),
+    .InstMem_Ack         (InstrMemAck),
+    // ex) DIV stall
+    .EX_ALU_Stall        (EX.ALUStall),
+    // memory stall
+    .M_Stall_Controller  (MEM.StallController),
+
+    /*** output ***/
+    // stall
+    .IF_Stall            (IF.Stall),
+    .ID_Stall            (ID.Stall),
+    .EX_Stall            (EX.Stall),
+    .M_Stall             (MEM.Stall),
+    .WB_Stall            (WB.Stall)
   );
   /*** Condition Compare Unit ***/
   Compare Compare (
@@ -97,7 +125,7 @@ module core (
     .LEZ  (ID.CmpLEZ)
   );
   /*** TODO: Data Memory Controller ***/
-  memory_controller data_memory_controller (
+  memory_controller d_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
     .DataIn        (MEM.ReadData2),
@@ -105,7 +133,7 @@ module core (
     .MReadData     (ReadDataOriginal),
     .MemRead       (MEM.MemRead),
     .MemWrite      (MEM.MemWrite),
-    .DataMem_Ack   (1'b0),
+    .DataMem_Ack   (DataMemAck),
     .Byte          (MEM.MemByte),
     .Half          (MEM.MemHalf),
     .SignExtend    (MEM.MemSignExtend),
@@ -114,12 +142,12 @@ module core (
     .LLSC          (MEM.LLSC),
     .ERET          (ID.Eret),
     .M_Exception_Stall (1'b0),
-    .IF_Stall      (1'b0),
+    .IF_Stall      (IF.stall),
     .DataOut       (MEM.MemReadData),
     .MWriteData    (WriteData),
-    .ByteEnable    (MemByteEnable),
-    .ReadEnable    (MemReadEnable),
-    .WriteEnable   (MemWriteEnable),
+    .ByteEnable    (DataMemByteEnable),
+    .ReadEnable    (DataMemReadEnable),
+    .WriteEnable   (DataMemWriteEnable),
     .M_Stall       (MEM.StallController)
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)

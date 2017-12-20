@@ -16,12 +16,14 @@ module ifid_stage(
      masked when this signal is high, and the interrupt will trigger on the next instruction load to ID.
     ***/
 
+    assign IF_Flush = (IF.Flush | IF.ExceptionFlush);
+
     always @(posedge CLK) begin
-        ID.Instruction <= (RST) ? 32'b0 : ((ID.Stall) ? ID.Instruction : ((IF.Stall | IF.Flush) ? 32'b0 : IF.Instruction));
+        ID.Instruction <= (RST) ? 32'b0 : ((ID.Stall) ? ID.Instruction : ((IF.Stall | IF_Flush) ? 32'b0 : IF.Instruction));
         ID.PCAdd4      <= (RST) ? 32'b0 : ((ID.Stall) ? ID.PCAdd4                                       : IF.PCAdd4);
         // ID.ID_IsBDS       <= (RST) ? 1'b0  : ((ID.Stall) ? ID.ID_IsBDS                                        : IF.IF_IsBDS);
         // ID.ID_RestartPC   <= (RST) ? 32'b0 : ((ID.Stall  | IF.IF_IsBDS) ? ID.ID_RestartPC                     : IF.PCOut);
-        // ID.ID_IsFlushed   <= (RST) ? 1'b0  : ((ID.Stall) ? ID.ID_IsFlushed                                    : IF.Flush);
+        // ID.ID_IsFlushed   <= (RST) ? 1'b0  : ((ID.Stall) ? ID.ID_IsFlushed                                    : IF_Flush);
     end
 
 endmodule

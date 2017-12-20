@@ -4,6 +4,7 @@
 interface intf_if();
   logic Stall;
   logic Flush;
+  logic ExceptionFlush;  // from CP0
 
   // IF - ID
   logic [31:0] Instruction;

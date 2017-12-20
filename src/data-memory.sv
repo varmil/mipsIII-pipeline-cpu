@@ -1,5 +1,4 @@
 // NOTE: if memory width is 16bit, then ir is concated 2 blocks (16+16)
-
 module data_memory #(parameter WIDTH = 32) (
   input logic CLK,
   input logic [31:0] Address,
@@ -8,6 +7,7 @@ module data_memory #(parameter WIDTH = 32) (
   input logic ReadEnable,
   input logic [3:0] ByteEnable,
 
+  output logic Ack,
   output logic [31:0] ReadData
 );
 
@@ -39,7 +39,13 @@ module data_memory #(parameter WIDTH = 32) (
     end
   end
 
+  // ACK (NOTE: Ack after 1 cycle because R/W operation is completed immediately)
+  always @ (posedge CLK) begin
+    if (WriteEnable | ReadEnable) Ack <= 1'b1;
+    if (Ack) Ack <= 1'b0;
+  end
+
   // READ (byte/half mask is done with Memory Controller)
   assign ReadData = (ReadEnable) ? RAM[addressBlock] : 'Z;
 
-endmodule // data_memory
+endmodule
