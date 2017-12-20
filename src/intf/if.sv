@@ -16,8 +16,9 @@ interface intf_if();
 
   // ifid_stage
   modport ifid_in(
-    input  Stall,
     input  Flush,
+    input  ExceptionFlush,
+    input  Stall,
 
     // Control Signals
     input  Instruction,

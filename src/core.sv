@@ -99,8 +99,8 @@ module core (
   hazard_controller hazard_controller(
     /*** input ***/
     // I-Memory signal for IF_Stall
-    .InstMem_Read        (InstrMemReadEnable),
-    .InstMem_Ack         (InstrMemAck),
+    .InstrMemReadEnable  (InstrMemReadEnable),
+    .InstrMemAck         (InstrMemAck),
     // ex) DIV stall
     .EX_ALU_Stall        (EX.ALUStall),
     // memory stall
@@ -142,7 +142,7 @@ module core (
     .LLSC          (MEM.LLSC),
     .ERET          (ID.Eret),
     .M_Exception_Stall (1'b0),
-    .IF_Stall      (IF.stall),
+    .IF_Stall      (IF.Stall),
     .DataOut       (MEM.MemReadData),
     .MWriteData    (WriteData),
     .ByteEnable    (DataMemByteEnable),

@@ -4,7 +4,6 @@ module ifid_stage(
   intf_id.ifid_out ID
 );
 
-
     /***
      The signal 'ID_IsFlushed' is needed because of interrupts. Normally, a flushed instruction
      is a NOP which will never cause an exception and thus its restart PC will never be needed
