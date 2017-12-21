@@ -38,7 +38,7 @@ module board (
   );
 
   instruction_memory #(32) i_memory(
-    CLK,
+    CLK, RST,
     PC,
     InstrMemReadEnable,
 
@@ -47,7 +47,7 @@ module board (
   );
 
   data_memory #(32) d_memory(
-    CLK,
+    CLK, RST,
     DataMemReadAddress,
     DataMemWriteData,
     DataMemWriteEnable,
