@@ -1,64 +1,27 @@
 module controller (
-  // instruction
-  input logic [5:0] OpCode,
-  input logic [5:0] Funct,
-  input logic [4:0] Rs,        // used to differentiate mfc0 and mtc0
-  input logic [4:0] Rt,        // used to differentiate bgez,bgezal,bltz,bltzal,teqi,tgei,tgeiu,tlti,tltiu,tnei
-
-  // Branch
-  input  Cmp_EQ,
-  input  Cmp_GZ,
-  input  Cmp_GEZ,
-  input  Cmp_LZ,
-  input  Cmp_LEZ,
-
-  // for some specific operations output
-  output logic SignExtend,
-  output logic Movn,
-  output logic Movz,
-  output logic Mfc0,
-  output logic Mtc0,
-  output logic Eret,
-
-  // Datapath output
-  output logic [1:0] PCSrc   ,
-  output logic Link          ,
-  output logic ALUSrc        ,
-  output logic Movc          ,
-  output logic Trap          ,
-  output logic TrapCond      ,
-  output logic RegDst        ,
-  output logic LLSC          ,
-  output logic MemRead       ,
-  output logic MemWrite      ,
-  output logic MemHalf       ,
-  output logic MemByte       ,
-  output logic MemSignExtend ,
-  output logic RegWrite      ,
-  output logic MemtoReg      ,
-
-  // ALU Operations
-  output logic [4:0] ALUOp
+  intf_id.controller ID,
+  output IF_Flush
+  // output reg [7:0] DP_Hazards
 );
 
   `include "parameters.sv"
 
   reg [15:0] Datapath;
-  assign PCSrc[0]      = Datapath[14];
-  assign Link          = Datapath[13];
-  assign ALUSrc        = Datapath[12];
-  assign Movc          = Datapath[11];
-  assign Trap          = Datapath[10];
-  assign TrapCond      = Datapath[9];
-  assign RegDst        = Datapath[8];
-  assign LLSC          = Datapath[7];
-  assign MemRead       = Datapath[6];
-  assign MemWrite      = Datapath[5];
-  assign MemHalf       = Datapath[4];
-  assign MemByte       = Datapath[3];
-  assign MemSignExtend = Datapath[2];
-  assign RegWrite      = Datapath[1];
-  assign MemtoReg      = Datapath[0];
+  assign ID.PCSrc[0]      = Datapath[14];
+  assign ID.Link          = Datapath[13];
+  assign ID.ALUSrcImm     = Datapath[12];
+  wire   Movc             = Datapath[11];
+  assign ID.Trap          = Datapath[10];
+  assign ID.TrapCond      = Datapath[9];
+  assign ID.RegDst        = Datapath[8];
+  assign ID.LLSC          = Datapath[7];
+  assign ID.MemRead       = Datapath[6];
+  assign ID.MemWrite      = Datapath[5];
+  assign ID.MemHalf       = Datapath[4];
+  assign ID.MemByte       = Datapath[3];
+  assign ID.MemSignExtend = Datapath[2];
+  assign ID.RegWrite      = Datapath[1];
+  assign ID.MemtoReg      = Datapath[0];
 
   /*** Datapath ***
        Bit  Name          Description
@@ -92,11 +55,11 @@ module controller (
       // if (ID_Stall)
       //     Datapath <= `DP_None;
       // else begin
-          case (OpCode)
+          case (ID.OpCode)
               // R-Type
               `Op_Type_R  :
                   begin
-                      case (Funct)
+                      case (ID.Funct)
                           `Funct_Add     : Datapath <= `DP_Add;
                           `Funct_Addu    : Datapath <= `DP_Addu;
                           `Funct_And     : Datapath <= `DP_And;
@@ -139,7 +102,7 @@ module controller (
               // R2-Type
               `Op_Type_R2 :
                   begin
-                      case (Funct)
+                      case (ID.Funct)
                           `Funct_Clo   : Datapath <= `DP_Clo;
                           `Funct_Clz   : Datapath <= `DP_Clz;
                           `Funct_Madd  : Datapath <= `DP_Madd;
@@ -165,7 +128,7 @@ module controller (
               // Branches and Traps
               `Op_Type_BI :
                   begin
-                      case (Rt)
+                      case (ID.Rt)
                           `OpRt_Bgez   : Datapath <= `DP_Bgez;
                           `OpRt_Bgezal : Datapath <= `DP_Bgezal;
                           `OpRt_Bltz   : Datapath <= `DP_Bltz;
@@ -186,10 +149,10 @@ module controller (
               // Coprocessor 0
               `Op_Type_CP0 :
                   begin
-                      case (Rs)
+                      case (ID.Rs)
                           `OpRs_MF   : Datapath <= `DP_Mfc0;
                           `OpRs_MT   : Datapath <= `DP_Mtc0;
-                          `OpRs_ERET : Datapath <= (Funct == `Funct_ERET) ? `DP_Eret : `DP_None;
+                          `OpRs_ERET : Datapath <= (ID.Funct == `Funct_ERET) ? `DP_Eret : `DP_None;
                           default    : Datapath <= `DP_None;
                       endcase
                   end
@@ -217,99 +180,99 @@ module controller (
   // ALU Assignment
   always @(*) begin
       // if (ID_Stall)
-      //     ALUOp <= `AluOp_Addu;  // Any Op that doesn't write HILO or cause exceptions
+      //     ID.ALUOp <= `AluOp_Addu;  // Any Op that doesn't write HILO or cause exceptions
       // else begin
-          case (OpCode)
+          case (ID.OpCode)
               `Op_Type_R  :
                   begin
-                      case (Funct)
-                          `Funct_Add     : ALUOp <= `AluOp_Add;
-                          `Funct_Addu    : ALUOp <= `AluOp_Addu;
-                          `Funct_And     : ALUOp <= `AluOp_And;
-                          `Funct_Div     : ALUOp <= `AluOp_Div;
-                          `Funct_Divu    : ALUOp <= `AluOp_Divu;
-                          `Funct_Jalr    : ALUOp <= `AluOp_Addu;
-                          `Funct_Mfhi    : ALUOp <= `AluOp_Mfhi;
-                          `Funct_Mflo    : ALUOp <= `AluOp_Mflo;
-                          `Funct_Movn    : ALUOp <= `AluOp_Addu;
-                          `Funct_Movz    : ALUOp <= `AluOp_Addu;
-                          `Funct_Mthi    : ALUOp <= `AluOp_Mthi;
-                          `Funct_Mtlo    : ALUOp <= `AluOp_Mtlo;
-                          `Funct_Mult    : ALUOp <= `AluOp_Mult;
-                          `Funct_Multu   : ALUOp <= `AluOp_Multu;
-                          `Funct_Nor     : ALUOp <= `AluOp_Nor;
-                          `Funct_Or      : ALUOp <= `AluOp_Or;
-                          `Funct_Sll     : ALUOp <= `AluOp_Sll;
-                          `Funct_Sllv    : ALUOp <= `AluOp_Sllv;
-                          `Funct_Slt     : ALUOp <= `AluOp_Slt;
-                          `Funct_Sltu    : ALUOp <= `AluOp_Sltu;
-                          `Funct_Sra     : ALUOp <= `AluOp_Sra;
-                          `Funct_Srav    : ALUOp <= `AluOp_Srav;
-                          `Funct_Srl     : ALUOp <= `AluOp_Srl;
-                          `Funct_Srlv    : ALUOp <= `AluOp_Srlv;
-                          `Funct_Sub     : ALUOp <= `AluOp_Sub;
-                          `Funct_Subu    : ALUOp <= `AluOp_Subu;
-                          `Funct_Syscall : ALUOp <= `AluOp_Addu;
-                          `Funct_Teq     : ALUOp <= `AluOp_Subu;
-                          `Funct_Tge     : ALUOp <= `AluOp_Slt;
-                          `Funct_Tgeu    : ALUOp <= `AluOp_Sltu;
-                          `Funct_Tlt     : ALUOp <= `AluOp_Slt;
-                          `Funct_Tltu    : ALUOp <= `AluOp_Sltu;
-                          `Funct_Tne     : ALUOp <= `AluOp_Subu;
-                          `Funct_Xor     : ALUOp <= `AluOp_Xor;
-                          default        : ALUOp <= `AluOp_Addu;
+                      case (ID.Funct)
+                          `Funct_Add     : ID.ALUOp <= `AluOp_Add;
+                          `Funct_Addu    : ID.ALUOp <= `AluOp_Addu;
+                          `Funct_And     : ID.ALUOp <= `AluOp_And;
+                          `Funct_Div     : ID.ALUOp <= `AluOp_Div;
+                          `Funct_Divu    : ID.ALUOp <= `AluOp_Divu;
+                          `Funct_Jalr    : ID.ALUOp <= `AluOp_Addu;
+                          `Funct_Mfhi    : ID.ALUOp <= `AluOp_Mfhi;
+                          `Funct_Mflo    : ID.ALUOp <= `AluOp_Mflo;
+                          `Funct_Movn    : ID.ALUOp <= `AluOp_Addu;
+                          `Funct_Movz    : ID.ALUOp <= `AluOp_Addu;
+                          `Funct_Mthi    : ID.ALUOp <= `AluOp_Mthi;
+                          `Funct_Mtlo    : ID.ALUOp <= `AluOp_Mtlo;
+                          `Funct_Mult    : ID.ALUOp <= `AluOp_Mult;
+                          `Funct_Multu   : ID.ALUOp <= `AluOp_Multu;
+                          `Funct_Nor     : ID.ALUOp <= `AluOp_Nor;
+                          `Funct_Or      : ID.ALUOp <= `AluOp_Or;
+                          `Funct_Sll     : ID.ALUOp <= `AluOp_Sll;
+                          `Funct_Sllv    : ID.ALUOp <= `AluOp_Sllv;
+                          `Funct_Slt     : ID.ALUOp <= `AluOp_Slt;
+                          `Funct_Sltu    : ID.ALUOp <= `AluOp_Sltu;
+                          `Funct_Sra     : ID.ALUOp <= `AluOp_Sra;
+                          `Funct_Srav    : ID.ALUOp <= `AluOp_Srav;
+                          `Funct_Srl     : ID.ALUOp <= `AluOp_Srl;
+                          `Funct_Srlv    : ID.ALUOp <= `AluOp_Srlv;
+                          `Funct_Sub     : ID.ALUOp <= `AluOp_Sub;
+                          `Funct_Subu    : ID.ALUOp <= `AluOp_Subu;
+                          `Funct_Syscall : ID.ALUOp <= `AluOp_Addu;
+                          `Funct_Teq     : ID.ALUOp <= `AluOp_Subu;
+                          `Funct_Tge     : ID.ALUOp <= `AluOp_Slt;
+                          `Funct_Tgeu    : ID.ALUOp <= `AluOp_Sltu;
+                          `Funct_Tlt     : ID.ALUOp <= `AluOp_Slt;
+                          `Funct_Tltu    : ID.ALUOp <= `AluOp_Sltu;
+                          `Funct_Tne     : ID.ALUOp <= `AluOp_Subu;
+                          `Funct_Xor     : ID.ALUOp <= `AluOp_Xor;
+                          default        : ID.ALUOp <= `AluOp_Addu;
                       endcase
                   end
               `Op_Type_R2 :
                   begin
-                      case (Funct)
-                          `Funct_Clo   : ALUOp <= `AluOp_Clo;
-                          `Funct_Clz   : ALUOp <= `AluOp_Clz;
-                          `Funct_Madd  : ALUOp <= `AluOp_Madd;
-                          `Funct_Maddu : ALUOp <= `AluOp_Maddu;
-                          `Funct_Msub  : ALUOp <= `AluOp_Msub;
-                          `Funct_Msubu : ALUOp <= `AluOp_Msubu;
-                          `Funct_Mul   : ALUOp <= `AluOp_Mul;
-                          default      : ALUOp <= `AluOp_Addu;
+                      case (ID.Funct)
+                          `Funct_Clo   : ID.ALUOp <= `AluOp_Clo;
+                          `Funct_Clz   : ID.ALUOp <= `AluOp_Clz;
+                          `Funct_Madd  : ID.ALUOp <= `AluOp_Madd;
+                          `Funct_Maddu : ID.ALUOp <= `AluOp_Maddu;
+                          `Funct_Msub  : ID.ALUOp <= `AluOp_Msub;
+                          `Funct_Msubu : ID.ALUOp <= `AluOp_Msubu;
+                          `Funct_Mul   : ID.ALUOp <= `AluOp_Mul;
+                          default      : ID.ALUOp <= `AluOp_Addu;
                       endcase
                   end
               `Op_Type_BI  :
                   begin
-                      case (Rt)
-                          `OpRt_Teqi   : ALUOp <= `AluOp_Subu;
-                          `OpRt_Tgei   : ALUOp <= `AluOp_Slt;
-                          `OpRt_Tgeiu  : ALUOp <= `AluOp_Sltu;
-                          `OpRt_Tlti   : ALUOp <= `AluOp_Slt;
-                          `OpRt_Tltiu  : ALUOp <= `AluOp_Sltu;
-                          `OpRt_Tnei   : ALUOp <= `AluOp_Subu;
-                          default      : ALUOp <= `AluOp_Addu;  // Branches don't matter.
+                      case (ID.Rt)
+                          `OpRt_Teqi   : ID.ALUOp <= `AluOp_Subu;
+                          `OpRt_Tgei   : ID.ALUOp <= `AluOp_Slt;
+                          `OpRt_Tgeiu  : ID.ALUOp <= `AluOp_Sltu;
+                          `OpRt_Tlti   : ID.ALUOp <= `AluOp_Slt;
+                          `OpRt_Tltiu  : ID.ALUOp <= `AluOp_Sltu;
+                          `OpRt_Tnei   : ID.ALUOp <= `AluOp_Subu;
+                          default      : ID.ALUOp <= `AluOp_Addu;  // Branches don't matter.
                       endcase
                   end
-              `Op_Type_CP0 : ALUOp <= `AluOp_Addu;
-              `Op_Addi     : ALUOp <= `AluOp_Add;
-              `Op_Addiu    : ALUOp <= `AluOp_Addu;
-              `Op_Andi     : ALUOp <= `AluOp_And;
-              `Op_Jal      : ALUOp <= `AluOp_Addu;
-              `Op_Lb       : ALUOp <= `AluOp_Addu;
-              `Op_Lbu      : ALUOp <= `AluOp_Addu;
-              `Op_Lh       : ALUOp <= `AluOp_Addu;
-              `Op_Lhu      : ALUOp <= `AluOp_Addu;
-              `Op_Ll       : ALUOp <= `AluOp_Addu;
-              `Op_Lui      : ALUOp <= `AluOp_Sllc;
-              `Op_Lw       : ALUOp <= `AluOp_Addu;
-              `Op_Lwl      : ALUOp <= `AluOp_Addu;
-              `Op_Lwr      : ALUOp <= `AluOp_Addu;
-              `Op_Ori      : ALUOp <= `AluOp_Or;
-              `Op_Sb       : ALUOp <= `AluOp_Addu;
-              `Op_Sc       : ALUOp <= `AluOp_Addu;  // XXX Needs HW implement
-              `Op_Sh       : ALUOp <= `AluOp_Addu;
-              `Op_Slti     : ALUOp <= `AluOp_Slt;
-              `Op_Sltiu    : ALUOp <= `AluOp_Sltu;
-              `Op_Sw       : ALUOp <= `AluOp_Addu;
-              `Op_Swl      : ALUOp <= `AluOp_Addu;
-              `Op_Swr      : ALUOp <= `AluOp_Addu;
-              `Op_Xori     : ALUOp <= `AluOp_Xor;
-              default      : ALUOp <= `AluOp_Addu;
+              `Op_Type_CP0 : ID.ALUOp <= `AluOp_Addu;
+              `Op_Addi     : ID.ALUOp <= `AluOp_Add;
+              `Op_Addiu    : ID.ALUOp <= `AluOp_Addu;
+              `Op_Andi     : ID.ALUOp <= `AluOp_And;
+              `Op_Jal      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lb       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lbu      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lh       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lhu      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Ll       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lui      : ID.ALUOp <= `AluOp_Sllc;
+              `Op_Lw       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lwl      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Lwr      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Ori      : ID.ALUOp <= `AluOp_Or;
+              `Op_Sb       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Sc       : ID.ALUOp <= `AluOp_Addu;  // XXX Needs HW implement
+              `Op_Sh       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Slti     : ID.ALUOp <= `AluOp_Slt;
+              `Op_Sltiu    : ID.ALUOp <= `AluOp_Sltu;
+              `Op_Sw       : ID.ALUOp <= `AluOp_Addu;
+              `Op_Swl      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Swr      : ID.ALUOp <= `AluOp_Addu;
+              `Op_Xori     : ID.ALUOp <= `AluOp_Xor;
+              default      : ID.ALUOp <= `AluOp_Addu;
           endcase
       // end
   end
@@ -323,30 +286,34 @@ module controller (
    ***/
 
   // Branch Detection: Options are mutually exclusive.
-  assign Branch_EQ  =  OpCode[2] & ~OpCode[1] & ~OpCode[0] &  Cmp_EQ;
-  assign Branch_GTZ =  OpCode[2] &  OpCode[1] &  OpCode[0] &  Cmp_GZ;
-  assign Branch_LEZ =  OpCode[2] &  OpCode[1] & ~OpCode[0] &  Cmp_LEZ;
-  assign Branch_NEQ =  OpCode[2] & ~OpCode[1] &  OpCode[0] & ~Cmp_EQ;
-  assign Branch_GEZ = ~OpCode[2] &  Rt[0] & Cmp_GEZ;
-  assign Branch_LTZ = ~OpCode[2] & ~Rt[0] & Cmp_LZ;
+  assign Branch_EQ  =  ID.OpCode[2] & ~ID.OpCode[1] & ~ID.OpCode[0] &  ID.CmpEQ;
+  assign Branch_GTZ =  ID.OpCode[2] &  ID.OpCode[1] &  ID.OpCode[0] &  ID.CmpGZ;
+  assign Branch_LEZ =  ID.OpCode[2] &  ID.OpCode[1] & ~ID.OpCode[0] &  ID.CmpLEZ;
+  assign Branch_NEQ =  ID.OpCode[2] & ~ID.OpCode[1] &  ID.OpCode[0] & ~ID.CmpEQ;
+  assign Branch_GEZ = ~ID.OpCode[2] &  ID.Rt[0]     &  ID.CmpGEZ;
+  assign Branch_LTZ = ~ID.OpCode[2] & ~ID.Rt[0]     &  ID.CmpLZ;
   assign Branch = Branch_EQ | Branch_GTZ | Branch_LEZ | Branch_NEQ | Branch_GEZ | Branch_LTZ;
-  assign PCSrc[1] = (Datapath[15] & ~Datapath[14]) ? Branch : Datapath[15];
+  assign ID.PCSrc[1] = (Datapath[15] & ~Datapath[14]) ? Branch : Datapath[15];
 
 
 
 
   // Sign- or Zero-Extension Control. The only ops that require zero-extension are
   // Andi, Ori, and Xori. The following also zero-extends 'lui', however it does not alter the effect of lui.
-  assign SignExtend = (OpCode[5:2] != 4'b0011);
-
-  // Move Conditional
-  assign Movn = Movc &  Funct[0];
-  assign Movz = Movc & ~Funct[0];
+  assign ID.SignExtend = (ID.OpCode[5:2] != 4'b0011);
 
   // Coprocessor 0 (Mfc0, Mtc0) control signals.
-  assign Mfc0 = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_MF));
-  assign Mtc0 = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_MT));
-  assign Eret = ((OpCode == `Op_Type_CP0) && (Rs == `OpRs_ERET) && (Funct == `Funct_ERET));
+  assign ID.Mfc0 = ((ID.OpCode == `Op_Type_CP0) && (ID.Rs == `OpRs_MF));
+  assign ID.Mtc0 = ((ID.OpCode == `Op_Type_CP0) && (ID.Rs == `OpRs_MT));
+  assign ID.Eret = ((ID.OpCode == `Op_Type_CP0) && (ID.Rs == `OpRs_ERET) && (ID.Funct == `Funct_ERET));
 
+
+  /* In MIPS32, all Branch and Jump operations execute the Branch Delay Slot,
+   * or next instruction, regardless if the branch is taken or not. The exception
+   * is the "Branch Likely" instruction group. These are deprecated, however, and not
+   * implemented here. "IF_Flush" is defined to allow for the cancelation of a
+   * Branch Delay Slot should these be implemented later.
+   */
+  assign IF_Flush = 0;
 
 endmodule

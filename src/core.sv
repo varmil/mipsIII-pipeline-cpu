@@ -1,210 +1,218 @@
+// NOTE: RegDst names EX_RtRd. Impl -- see https://github.com/grantae/mips32r1_core/blob/master/mips32r1/Processor.v#L525-L532
+// Memory Enable wire continues to go high duaring memory access
+
 // The processor
 module core (
   // from board
   input  logic CLK, RST,
   // from I-Memory
+  input logic        InstrMemAck,
   input logic [31:0] Instruction,
   // from D-Memory
+  input logic        DataMemAck,
   input logic [31:0] ReadDataOriginal,
 
   // to I-Memory
-  output logic [31:0] PC,
+  output logic [31:0] PCForInstrMem,
+  output logic        InstrMemReadEnable,
   // to D-Memory
-  output logic [31:0] ALUResult,    // address from ALU
-  output logic [31:0] WriteData,    // data from register file
-  output logic        MemReadEnable,
-  output logic        MemWriteEnable,
-  output logic [3:0]  MemByteEnable    // 4-bit Write, one for each byte in word.
+  output logic [31:0] DataMemAddress,    // address from ALU
+  output logic [31:0] WriteData,         // data from register file
+  output logic        DataMemReadEnable,
+  output logic        DataMemWriteEnable,
+  output logic [3:0]  DataMemByteEnable    // 4-bit Write, one for each byte in word.
 );
 
   /*** Constant ***/
   `define PCIncrAmt   4
   `define PCInit      0
 
-  /*** parse instruction ***/
-  wire [5:0]  OpCode      = Instruction[31:26];
-  wire [4:0]  Rs          = Instruction[25:21];
-  wire [4:0]  Rt          = Instruction[20:16];
-  wire [4:0]  Rd          = Instruction[15:11];
-  wire [5:0]  Funct       = Instruction[5:0];
-  wire [15:0] Immediate   = Instruction[15:0];
-  wire [25:0] JumpAddress = Instruction[25:0];
-  wire [4:0]  Shamt       = Instruction[10:6];
+  /*** IF (Instruction Fetch) Signals ***/
+  intf_if IF();
+  assign IF.Instruction = (IF.Stall) ? 32'h0000_0000 : Instruction;
+  assign PCForInstrMem = IF.PCOut;
 
-  /*** Controller ***/
-  wire SignExtend    ;
-  wire Movn          ;
-  wire Movz          ;
-  wire Mfc0          ;
-  wire Mtc0          ;
-  wire Eret          ;
+  /*** ID (Instruction Decode) Signals ***/
+  intf_id ID();
 
-  /*** Datapath ***/
-  wire [1:0] PCSrc   ;
-  wire Link          ;
-  wire ALUSrc        ;
-  wire Movc          ;
-  wire Trap          ;
-  wire TrapCond      ;
-  wire RegDst        ;
-  wire LLSC          ;
-  wire MemRead       ;
-  wire MemWrite      ;
-  wire MemHalf       ;
-  wire MemByte       ;
-  wire MemSignExtend ;
-  wire RegWrite      ;
-  wire MemtoReg      ;
+  /*** EX (Execute) Signals ***/
+  intf_ex EX();
 
-  /*** ALU Operations ***/
-  wire [4:0]  ALUOp;
+  /*** Memory Signals ***/
+  intf_mem MEM();
+  assign DataMemAddress = MEM.ALUResult;
 
-  /*** Register File ***/
-  wire [31:0] RegReadData1;
-  wire [31:0] RegReadData2;
+  /*** Write Back Signals ***/
+  intf_wb WB();
 
-  /*** for branch operations ***/
-  wire CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
+  /*** Other Signals ***/
+  wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
 
-  /*** internal signals ***/
-  wire [31:0] PCPlus4Out;
-  wire [31:0] PCBranchOut;
-  wire [31:0] PCSrcOut;
-  wire [4:0]  RegDstOut;
-  wire [31:0] MemtoRegOut;
-  wire [31:0] ExtImmOut;
-  wire [31:0] SL2ForPCBranchOut;
-  wire [31:0] ALUSrcOut;
-  wire [31:0] ReadDataProcessed;
-
-  /*** ALU Signals ***/
-  wire EX_Stall;
-  wire EX_EXC_Ov;
-  wire EX_ALU_Stall;
-
-  /*** MEM (Memory) Signals ***/
-  wire M_Stall;
-  wire M_Stall_Controller;
-
-  /*** wire init ***/
-  wire [31:0] PCJumpAddress = { PCPlus4Out[31:28], JumpAddress[25:0], 2'b00 };
-  wire [31:0] WriteDataPre = RegReadData2;
+  // External Memory Interface
+  // * IReadMask stays 0 while accessing I-Memory and until finished it (== ACK coming)
+  // * Basically I-Memory continue to read the data
+  //   because IRead continue to be asserted except in the case of Ack coming
+  reg IRead, IReadMask;
+  always @(posedge CLK) begin
+    IRead     <= (RST) ? 1'b1 : ~InstrMemAck;
+    IReadMask <= (RST) ? 1'b0 : ((IRead & InstrMemAck) ? 1'b1 : ((~IF.Stall) ? 1'b0 : IReadMask));
+  end
+  assign InstrMemReadEnable = IRead & ~IReadMask;
 
 
-  /*** block modules ***/
-  program_counter #(.INIT(`PCInit)) program_counter(CLK, RST, PCSrcOut, PC);
+
+  /***
+   block modules
+  ***/
+  program_counter #(.INIT(`PCInit)) program_counter(
+    CLK, RST,
+    (~IF.Stall & ~ID.Stall),
+    IF.PCSrcOut,
+    IF.PCOut
+  );
   register_file register_file(
-    CLK, RegWrite,
+    CLK, WB.RegWrite,
     // read reg num1, 2, write reg num
-    Rs, Rt, RegDstOut,
+    ID.Rs, ID.Rt, WB.RegDstOut,
     // write data
-    MemtoRegOut,
+    WB.MemtoRegOut,
     // read data
-    RegReadData1, RegReadData2
+    ID.ReadData1, ID.ReadData2
   );
   alu alu(
     // input
     CLK, RST,
-    EX_Stall,
-    ALUOp,
-    Shamt,
-    RegReadData1, ALUSrcOut, // A, B
+    EX.Stall,
+    EX.ALUOp,
+    EX.Shamt,
+    EX.ReadData1, EX.ALUSrcOut, // A, B
     // output
-    ALUResult,
-    EX_EXC_Ov,
-    EX_ALU_Stall
+    EX.ALUResult,
+    EX.ExcOv,
+    EX.ALUStall
   );
   controller controller(
-    // instruction input
-    OpCode, Funct, Rs, Rt,
-    // branch condition input
-    CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ,
-
-    // some logic operation output
-    SignExtend,
-    Movn,
-    Movz,
-    Mfc0,
-    Mtc0,
-    Eret,
-    // Datapath output
-    PCSrc         ,
-    Link          ,
-    ALUSrc        ,
-    Movc          ,
-    Trap          ,
-    TrapCond      ,
-    RegDst        ,
-    LLSC          ,
-    MemRead       ,
-    MemWrite      ,
-    MemHalf       ,
-    MemByte       ,
-    MemSignExtend ,
-    RegWrite      ,
-    MemtoReg      ,
-    // ALU Operations output
-    ALUOp
+    .ID         (ID.controller),
+    .IF_Flush   (IF.Flush)
+    // .DP_Hazards (ID_DP_Hazards)
   );
-  /*** Hazard and Forward Control Unit ***/
+  /*** TODO: Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
-    // input
-    EX_ALU_Stall,
-    // output
-    EX_Stall
+    /*** input ***/
+    // I-Memory signal for IF_Stall
+    .InstrMemReadEnable  (InstrMemReadEnable),
+    .InstrMemAck         (InstrMemAck),
+    // ex) DIV stall
+    .EX_ALU_Stall        (EX.ALUStall),
+    // memory stall
+    .M_Stall_Controller  (MEM.StallController),
+
+    /*** output ***/
+    // stall
+    .IF_Stall            (IF.Stall),
+    .ID_Stall            (ID.Stall),
+    .EX_Stall            (EX.Stall),
+    .M_Stall             (MEM.Stall),
+    .WB_Stall            (WB.Stall)
   );
   /*** Condition Compare Unit ***/
   Compare Compare (
-    .A    (RegReadData1),
-    .B    (RegReadData2),
-    .EQ   (CmpEQ),
-    .GZ   (CmpGZ),
-    .LZ   (CmpLZ),
-    .GEZ  (CmpGEZ),
-    .LEZ  (CmpLEZ)
+    .A    (ID.ReadData1),
+    .B    (ID.ReadData2),
+    .EQ   (ID.CmpEQ),
+    .GZ   (ID.CmpGZ),
+    .LZ   (ID.CmpLZ),
+    .GEZ  (ID.CmpGEZ),
+    .LEZ  (ID.CmpLEZ)
   );
   /*** TODO: Data Memory Controller ***/
-  memory_controller data_memory_controller (
+  memory_controller d_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
-    .DataIn        (WriteDataPre),
-    .Address       (ALUResult),
+    .DataIn        (MEM.ReadData2),
+    .Address       (MEM.ALUResult),
     .MReadData     (ReadDataOriginal),
-    .MemRead       (MemRead),
-    .MemWrite      (MemWrite),
-    .DataMem_Ack   (1'b0),
-    .Byte          (MemByte),
-    .Half          (MemHalf),
-    .SignExtend    (MemSignExtend),
+    .MemRead       (MEM.MemRead),
+    .MemWrite      (MEM.MemWrite),
+    .DataMem_Ack   (DataMemAck),
+    .Byte          (MEM.MemByte),
+    .Half          (MEM.MemHalf),
+    .SignExtend    (MEM.MemSignExtend),
     .KernelMode    (1'b1),
     // .ReverseEndian (M_ReverseEndian),
-    .LLSC          (LLSC),
-    .ERET          (Eret),
-    // .Left          (M_Left),
-    // .Right         (M_Right),
+    .LLSC          (MEM.LLSC),
+    .ERET          (ID.Eret),
     .M_Exception_Stall (1'b0),
-    .IF_Stall      (1'b0),
-    .DataOut       (ReadDataProcessed),
+    .IF_Stall      (IF.Stall),
+    .DataOut       (MEM.MemReadData),
     .MWriteData    (WriteData),
-    .ByteEnable    (MemByteEnable),
-    .ReadEnable    (MemReadEnable),
-    .WriteEnable   (MemWriteEnable),
-    .M_Stall       (M_Stall_Controller)
+    .ByteEnable    (DataMemByteEnable),
+    .ReadEnable    (DataMemReadEnable),
+    .WriteEnable   (DataMemWriteEnable),
+    .M_Stall       (MEM.StallController)
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)
   );
+  cp0 cp0(
+    // input
+    // output
+    .IF_Exception_Flush  (IF.ExceptionFlush),
+    .ID_Exception_Flush  (ID.Flush),
+    .EX_Exception_Flush  (EX.Flush),
+    .M_Exception_Flush   (MEM.Flush)
+  );
 
 
-  /*** common modules ***/
-  mux4 #(32) pc_src(PCPlus4Out, PCJumpAddress, PCBranchOut, RegReadData1, PCSrc, PCSrcOut);
-  mux2 #(5)  reg_dst(Rt, Rd, RegDst, RegDstOut);
-  mux2 #(32) alu_src(RegReadData2, ExtImmOut, ALUSrc, ALUSrcOut);
-  mux2 #(32) mem_to_reg(ALUResult, ReadDataProcessed, MemtoReg, MemtoRegOut);
+  /***
+   stages
+  ***/
+  /*** Instruction Fetch -> Instruction Decode Stage Register ***/
+  ifid_stage ifid_stage (
+    .CLK             (CLK),
+    .RST             (RST),
+    .IF              (IF.ifid_in),
+    .ID              (ID.ifid_out)
+  );
+  /*** Instruction Decode -> Execute Pipeline Stage ***/
+  idex_stage idex_stage (
+    .CLK               (CLK),
+    .RST               (RST),
+    .ID                (ID.idex_in),
+    .EX                (EX.idex_out)
+    // Hazard & Forwarding
+    // .ID_WantRsByEX     (ID_DP_Hazards[3]),
+    // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
+    // .ID_WantRtByEX     (ID_DP_Hazards[1]),
+    // .ID_NeedRtByEX     (ID_DP_Hazards[0])
+  );
+  /*** Execute -> Memory Pipeline Stage ***/
+  exmem_stage exmem_stage (
+    .CLK               (CLK),
+    .RST               (RST),
+    .EX                (EX.exmem_in),
+    .MEM               (MEM.exmem_out)
+  );
+  /*** Memory -> Write Back Pipeline Stage ***/
+  memwb_stage memwb_stage (
+    .CLK               (CLK),
+    .RST               (RST),
+    .MEM               (MEM.memwb_in),
+    .WB                (WB.memwb_out)
+  );
 
-  adder #(32) pc_plus4(PC, `PCIncrAmt, PCPlus4Out);
-  adder #(32) pc_branch(PCPlus4Out, SL2ForPCBranchOut, PCBranchOut);
 
-  sign_or_zero_extender ext_imm(Immediate, SignExtend, ExtImmOut);
-  sl2 sl2_for_pc_branch(ExtImmOut, SL2ForPCBranchOut);
+  /***
+   common modules
+  ***/
+  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
+  mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
+  mux2 #(32) alu_src(EX.ReadData2, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
+  mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
+
+  adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
+  adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);
+
+  sign_or_zero_extender ext_imm(ID.Immediate, ID.SignExtend, ID.ExtImmOut);
+  sl2 sl2_for_pc_branch(ID.ExtImmOut, ID.SL2OutForPCBranch);
 
 endmodule
