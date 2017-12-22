@@ -2,8 +2,8 @@
 
 /*** EX (Execute) Signals ***/
 interface intf_ex();
-  logic Stall;
-  logic Flush;
+  wire Stall;
+  wire Flush;  // from CP0
 
   // control signals
   logic [4:0] ALUOp;

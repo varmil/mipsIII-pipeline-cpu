@@ -2,7 +2,7 @@
 
 /*** Write Back Signals ***/
 interface intf_wb();
-  logic Stall;
+  wire Stall;
 
   // control signals
   logic RegWrite;

@@ -66,6 +66,7 @@ module core (
   ***/
   program_counter #(.INIT(`PCInit)) program_counter(
     CLK, RST,
+    (~IF.Stall & ~ID.Stall),
     IF.PCSrcOut,
     IF.PCOut
   );
@@ -151,6 +152,14 @@ module core (
     .M_Stall       (MEM.StallController)
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)
+  );
+  cp0 cp0(
+    // input
+    // output
+    .IF_Exception_Flush  (IF.ExceptionFlush),
+    .ID_Exception_Flush  (ID.Flush),
+    .EX_Exception_Flush  (EX.Flush),
+    .M_Exception_Flush   (MEM.Flush)
   );
 
 

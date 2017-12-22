@@ -2,8 +2,8 @@
 
 /*** ID (Instruction Decode) Signals ***/
 interface intf_id();
-  logic Stall;
-  logic Flush; //  == ID_Exception_Flush
+  wire Stall;
+  wire Flush;  // from CP0, == ID_Exception_Flush
 
   // .ID - EX (control signals)
   logic SignExtend;

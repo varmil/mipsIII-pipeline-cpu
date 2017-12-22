@@ -2,9 +2,9 @@
 
 /*** IF (Instruction Fetch) Signals ***/
 interface intf_if();
-  logic Stall;
-  logic Flush;
-  logic ExceptionFlush;  // from CP0
+  wire  Stall;
+  wire  Flush;
+  wire  ExceptionFlush;  // from CP0. only IF stage has two flush wires, Flush and ExceptionFlush
 
   // IF - ID
   logic [31:0] Instruction;

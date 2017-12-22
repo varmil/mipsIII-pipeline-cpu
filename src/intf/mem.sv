@@ -2,9 +2,9 @@
 
 /*** MEMORY Signals ***/
 interface intf_mem();
-  logic Stall;
-  logic StallController; // output from D-Memory
-  logic ExceptionFlush;  // from CP0
+  wire Stall;
+  wire StallController; // output from D-Memory
+  wire Flush;  // from CP0
 
   // control signals
   logic Trap;
@@ -51,7 +51,7 @@ interface intf_mem();
 
   modport memwb_in(
     input Stall,
-    input ExceptionFlush,
+    input Flush,
 
     // control signals
     input RegWrite,

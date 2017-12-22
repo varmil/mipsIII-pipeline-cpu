@@ -32,11 +32,8 @@ module data_memory #(parameter WIDTH = 32) (
     end
   end
 
-  // WRITE (always write 1 word)
   always @ (posedge CLK) begin
-    if (WriteEnable) begin
-      RAM[addressBlock] <= { MemByte3, MemByte2, MemByte1, MemByte0 };
-    end
+
   end
 
   // ACK (NOTE: Ack after 1 cycle because R/W operation is completed immediately)
@@ -44,11 +41,24 @@ module data_memory #(parameter WIDTH = 32) (
     if (RST) begin
       Ack <= 1'b0;
     end
-    if (WriteEnable | ReadEnable) Ack <= 1'b1;
-    if (Ack) Ack <= 1'b0;
+    else begin
+      // WRITE (always write 1 word)
+      if (WriteEnable) begin
+        RAM[addressBlock] <= { MemByte3, MemByte2, MemByte1, MemByte0 };
+        Ack <= 1'b1;
+      end
+
+      // READ  (always read 1 word)
+      if (ReadEnable) begin
+        ReadData <= RAM[addressBlock];
+        Ack <= 1'b1;
+      end
+
+      if (Ack) Ack <= 1'b0;
+    end
   end
 
   // READ (byte/half mask is done with Memory Controller)
-  assign ReadData = (ReadEnable) ? RAM[addressBlock] : 'Z;
+  // assign ReadData = (ReadEnable) ? RAM[addressBlock] : 'Z;
 
 endmodule

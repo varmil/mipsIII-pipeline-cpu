@@ -24,9 +24,15 @@ module instruction_memory #(parameter WIDTH = 32) (
     if (RST) begin
       Ack <= 1'b0;
     end
-    if (ReadEnable) Ack <= 1'b1;
-    if (Ack) Ack <= 1'b0;
+    else begin
+      if (ReadEnable) begin
+        Instr <= RAM[addressBlock];
+        Ack <= 1'b1;
+      end
+
+      if (Ack) Ack <= 1'b0;
+    end
   end
 
-  assign Instr = (ReadEnable) ? RAM[addressBlock] : 'Z;
+  // assign Instr = (ReadEnable) ? RAM[addressBlock] : 'Z;
 endmodule
