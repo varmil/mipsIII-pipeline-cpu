@@ -524,98 +524,98 @@
      1:   Wants Rt by EX
      0:   Needs Rt by EX
 */
-// `define HAZ_Nothing  8'b00000000    // Jumps, Lui, Mfhi/lo, special, etc.
-// `define HAZ_IDRsIDRt 8'b11110000    // Beq, Bne, Traps
-// `define HAZ_IDRs     8'b11000000    // Most branches, Jumps to registers
-// `define HAZ_IDRt     8'b00110000    // Mtc0
-// `define HAZ_IDRtEXRs 8'b10111100    // Movn, Movz
-// `define HAZ_EXRsEXRt 8'b10101111    // Many R-Type ops
-// `define HAZ_EXRs     8'b10001100    // Immediates: Loads, Clo/z, Mthi/lo, etc.
-// `define HAZ_EXRsWRt  8'b10101110    // Stores
-// `define HAZ_EXRt     8'b00100011    // Shifts using Shamt field
-// //-----------------------------------------
-// `define HAZ_Add     `HAZ_EXRsEXRt
-// `define HAZ_Addi    `HAZ_EXRs
-// `define HAZ_Addiu   `HAZ_EXRs
-// `define HAZ_Addu    `HAZ_EXRsEXRt
-// `define HAZ_And     `HAZ_EXRsEXRt
-// `define HAZ_Andi    `HAZ_EXRs
-// `define HAZ_Beq     `HAZ_IDRsIDRt
-// `define HAZ_Bgez    `HAZ_IDRs
-// `define HAZ_Bgezal  `HAZ_IDRs
-// `define HAZ_Bgtz    `HAZ_IDRs
-// `define HAZ_Blez    `HAZ_IDRs
-// `define HAZ_Bltz    `HAZ_IDRs
-// `define HAZ_Bltzal  `HAZ_IDRs
-// `define HAZ_Bne     `HAZ_IDRsIDRt
-// `define HAZ_Break   `HAZ_Nothing
-// `define HAZ_Clo     `HAZ_EXRs
-// `define HAZ_Clz     `HAZ_EXRs
-// `define HAZ_Div     `HAZ_EXRsEXRt
-// `define HAZ_Divu    `HAZ_EXRsEXRt
-// `define HAZ_Eret    `HAZ_Nothing
-// `define HAZ_J       `HAZ_Nothing
-// `define HAZ_Jal     `HAZ_Nothing
-// `define HAZ_Jalr    `HAZ_IDRs
-// `define HAZ_Jr      `HAZ_IDRs
-// `define HAZ_Lb      `HAZ_EXRs
-// `define HAZ_Lbu     `HAZ_EXRs
-// `define HAZ_Lh      `HAZ_EXRs
-// `define HAZ_Lhu     `HAZ_EXRs
-// `define HAZ_Ll      `HAZ_EXRs
-// `define HAZ_Lui     `HAZ_Nothing
-// `define HAZ_Lw      `HAZ_EXRs
-// `define HAZ_Lwl     `HAZ_EXRsEXRt
-// `define HAZ_Lwr     `HAZ_EXRsEXRt
-// `define HAZ_Madd    `HAZ_EXRsEXRt
-// `define HAZ_Maddu   `HAZ_EXRsEXRt
-// `define HAZ_Mfc0    `HAZ_Nothing
-// `define HAZ_Mfhi    `HAZ_Nothing
-// `define HAZ_Mflo    `HAZ_Nothing
-// `define HAZ_Movn    `HAZ_IDRtEXRs
-// `define HAZ_Movz    `HAZ_IDRtEXRs
-// `define HAZ_Msub    `HAZ_EXRsEXRt
-// `define HAZ_Msubu   `HAZ_EXRsEXRt
-// `define HAZ_Mtc0    `HAZ_IDRt
-// `define HAZ_Mthi    `HAZ_EXRs
-// `define HAZ_Mtlo    `HAZ_EXRs
-// `define HAZ_Mul     `HAZ_EXRsEXRt
-// `define HAZ_Mult    `HAZ_EXRsEXRt
-// `define HAZ_Multu   `HAZ_EXRsEXRt
-// `define HAZ_Nor     `HAZ_EXRsEXRt
-// `define HAZ_Or      `HAZ_EXRsEXRt
-// `define HAZ_Ori     `HAZ_EXRs
-// `define HAZ_Pref    `HAZ_Nothing // XXX
-// `define HAZ_Sb      `HAZ_EXRsWRt
-// `define HAZ_Sc      `HAZ_EXRsWRt
-// `define HAZ_Sh      `HAZ_EXRsWRt
-// `define HAZ_Sll     `HAZ_EXRt
-// `define HAZ_Sllv    `HAZ_EXRsEXRt
-// `define HAZ_Slt     `HAZ_EXRsEXRt
-// `define HAZ_Slti    `HAZ_EXRs
-// `define HAZ_Sltiu   `HAZ_EXRs
-// `define HAZ_Sltu    `HAZ_EXRsEXRt
-// `define HAZ_Sra     `HAZ_EXRt
-// `define HAZ_Srav    `HAZ_EXRsEXRt
-// `define HAZ_Srl     `HAZ_EXRt
-// `define HAZ_Srlv    `HAZ_EXRsEXRt
-// `define HAZ_Sub     `HAZ_EXRsEXRt
-// `define HAZ_Subu    `HAZ_EXRsEXRt
-// `define HAZ_Sw      `HAZ_EXRsWRt
-// `define HAZ_Swl     `HAZ_EXRsWRt
-// `define HAZ_Swr     `HAZ_EXRsWRt
-// `define HAZ_Syscall `HAZ_Nothing
-// `define HAZ_Teq     `HAZ_EXRsEXRt
-// `define HAZ_Teqi    `HAZ_EXRs
-// `define HAZ_Tge     `HAZ_EXRsEXRt
-// `define HAZ_Tgei    `HAZ_EXRs
-// `define HAZ_Tgeiu   `HAZ_EXRs
-// `define HAZ_Tgeu    `HAZ_EXRsEXRt
-// `define HAZ_Tlt     `HAZ_EXRsEXRt
-// `define HAZ_Tlti    `HAZ_EXRs
-// `define HAZ_Tltiu   `HAZ_EXRs
-// `define HAZ_Tltu    `HAZ_EXRsEXRt
-// `define HAZ_Tne     `HAZ_EXRsEXRt
-// `define HAZ_Tnei    `HAZ_EXRs
-// `define HAZ_Xor     `HAZ_EXRsEXRt
-// `define HAZ_Xori    `HAZ_EXRs
+`define HAZ_Nothing  8'b00000000    // Jumps, Lui, Mfhi/lo, special, etc.
+`define HAZ_IDRsIDRt 8'b11110000    // Beq, Bne, Traps
+`define HAZ_IDRs     8'b11000000    // Most branches, Jumps to registers
+`define HAZ_IDRt     8'b00110000    // Mtc0
+`define HAZ_IDRtEXRs 8'b10111100    // Movn, Movz
+`define HAZ_EXRsEXRt 8'b10101111    // Many R-Type ops
+`define HAZ_EXRs     8'b10001100    // Immediates: Loads, Clo/z, Mthi/lo, etc.
+`define HAZ_EXRsWRt  8'b10101110    // Stores
+`define HAZ_EXRt     8'b00100011    // Shifts using Shamt field
+//-----------------------------------------
+`define HAZ_Add     `HAZ_EXRsEXRt
+`define HAZ_Addi    `HAZ_EXRs
+`define HAZ_Addiu   `HAZ_EXRs
+`define HAZ_Addu    `HAZ_EXRsEXRt
+`define HAZ_And     `HAZ_EXRsEXRt
+`define HAZ_Andi    `HAZ_EXRs
+`define HAZ_Beq     `HAZ_IDRsIDRt
+`define HAZ_Bgez    `HAZ_IDRs
+`define HAZ_Bgezal  `HAZ_IDRs
+`define HAZ_Bgtz    `HAZ_IDRs
+`define HAZ_Blez    `HAZ_IDRs
+`define HAZ_Bltz    `HAZ_IDRs
+`define HAZ_Bltzal  `HAZ_IDRs
+`define HAZ_Bne     `HAZ_IDRsIDRt
+`define HAZ_Break   `HAZ_Nothing
+`define HAZ_Clo     `HAZ_EXRs
+`define HAZ_Clz     `HAZ_EXRs
+`define HAZ_Div     `HAZ_EXRsEXRt
+`define HAZ_Divu    `HAZ_EXRsEXRt
+`define HAZ_Eret    `HAZ_Nothing
+`define HAZ_J       `HAZ_Nothing
+`define HAZ_Jal     `HAZ_Nothing
+`define HAZ_Jalr    `HAZ_IDRs
+`define HAZ_Jr      `HAZ_IDRs
+`define HAZ_Lb      `HAZ_EXRs
+`define HAZ_Lbu     `HAZ_EXRs
+`define HAZ_Lh      `HAZ_EXRs
+`define HAZ_Lhu     `HAZ_EXRs
+`define HAZ_Ll      `HAZ_EXRs
+`define HAZ_Lui     `HAZ_Nothing
+`define HAZ_Lw      `HAZ_EXRs
+`define HAZ_Lwl     `HAZ_EXRsEXRt
+`define HAZ_Lwr     `HAZ_EXRsEXRt
+`define HAZ_Madd    `HAZ_EXRsEXRt
+`define HAZ_Maddu   `HAZ_EXRsEXRt
+`define HAZ_Mfc0    `HAZ_Nothing
+`define HAZ_Mfhi    `HAZ_Nothing
+`define HAZ_Mflo    `HAZ_Nothing
+`define HAZ_Movn    `HAZ_IDRtEXRs
+`define HAZ_Movz    `HAZ_IDRtEXRs
+`define HAZ_Msub    `HAZ_EXRsEXRt
+`define HAZ_Msubu   `HAZ_EXRsEXRt
+`define HAZ_Mtc0    `HAZ_IDRt
+`define HAZ_Mthi    `HAZ_EXRs
+`define HAZ_Mtlo    `HAZ_EXRs
+`define HAZ_Mul     `HAZ_EXRsEXRt
+`define HAZ_Mult    `HAZ_EXRsEXRt
+`define HAZ_Multu   `HAZ_EXRsEXRt
+`define HAZ_Nor     `HAZ_EXRsEXRt
+`define HAZ_Or      `HAZ_EXRsEXRt
+`define HAZ_Ori     `HAZ_EXRs
+`define HAZ_Pref    `HAZ_Nothing // XXX
+`define HAZ_Sb      `HAZ_EXRsWRt
+`define HAZ_Sc      `HAZ_EXRsWRt
+`define HAZ_Sh      `HAZ_EXRsWRt
+`define HAZ_Sll     `HAZ_EXRt
+`define HAZ_Sllv    `HAZ_EXRsEXRt
+`define HAZ_Slt     `HAZ_EXRsEXRt
+`define HAZ_Slti    `HAZ_EXRs
+`define HAZ_Sltiu   `HAZ_EXRs
+`define HAZ_Sltu    `HAZ_EXRsEXRt
+`define HAZ_Sra     `HAZ_EXRt
+`define HAZ_Srav    `HAZ_EXRsEXRt
+`define HAZ_Srl     `HAZ_EXRt
+`define HAZ_Srlv    `HAZ_EXRsEXRt
+`define HAZ_Sub     `HAZ_EXRsEXRt
+`define HAZ_Subu    `HAZ_EXRsEXRt
+`define HAZ_Sw      `HAZ_EXRsWRt
+`define HAZ_Swl     `HAZ_EXRsWRt
+`define HAZ_Swr     `HAZ_EXRsWRt
+`define HAZ_Syscall `HAZ_Nothing
+`define HAZ_Teq     `HAZ_EXRsEXRt
+`define HAZ_Teqi    `HAZ_EXRs
+`define HAZ_Tge     `HAZ_EXRsEXRt
+`define HAZ_Tgei    `HAZ_EXRs
+`define HAZ_Tgeiu   `HAZ_EXRs
+`define HAZ_Tgeu    `HAZ_EXRsEXRt
+`define HAZ_Tlt     `HAZ_EXRsEXRt
+`define HAZ_Tlti    `HAZ_EXRs
+`define HAZ_Tltiu   `HAZ_EXRs
+`define HAZ_Tltu    `HAZ_EXRsEXRt
+`define HAZ_Tne     `HAZ_EXRsEXRt
+`define HAZ_Tnei    `HAZ_EXRs
+`define HAZ_Xor     `HAZ_EXRsEXRt
+`define HAZ_Xori    `HAZ_EXRs

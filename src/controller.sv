@@ -1,7 +1,7 @@
 module controller (
   intf_id.controller ID,
-  output IF_Flush
-  // output reg [7:0] DP_Hazards
+  output IF_Flush,
+  output reg [7:0] DP_Hazards
 );
 
   `include "parameters.sv"
@@ -176,6 +176,131 @@ module controller (
           endcase
       // end
   end
+
+
+  // Set the Hazard Control Signals and Exception Indicators based on the Op Code
+  always @(*) begin
+      case (OpCode)
+          // R-Type
+          `Op_Type_R  :
+              begin
+                  case (Funct)
+                      `Funct_Add     : begin DP_Hazards <= `HAZ_Add;     /*DP_Exceptions <= `EXC_Add;     */end
+                      `Funct_Addu    : begin DP_Hazards <= `HAZ_Addu;    /*DP_Exceptions <= `EXC_Addu;    */end
+                      `Funct_And     : begin DP_Hazards <= `HAZ_And;     /*DP_Exceptions <= `EXC_And;     */end
+                      `Funct_Break   : begin DP_Hazards <= `HAZ_Break;   /*DP_Exceptions <= `EXC_Break;   */end
+                      `Funct_Div     : begin DP_Hazards <= `HAZ_Div;     /*DP_Exceptions <= `EXC_Div;     */end
+                      `Funct_Divu    : begin DP_Hazards <= `HAZ_Divu;    /*DP_Exceptions <= `EXC_Divu;    */end
+                      `Funct_Jalr    : begin DP_Hazards <= `HAZ_Jalr;    /*DP_Exceptions <= `EXC_Jalr;    */end
+                      `Funct_Jr      : begin DP_Hazards <= `HAZ_Jr;      /*DP_Exceptions <= `EXC_Jr;      */end
+                      `Funct_Mfhi    : begin DP_Hazards <= `HAZ_Mfhi;    /*DP_Exceptions <= `EXC_Mfhi;    */end
+                      `Funct_Mflo    : begin DP_Hazards <= `HAZ_Mflo;    /*DP_Exceptions <= `EXC_Mflo;    */end
+                      `Funct_Movn    : begin DP_Hazards <= `HAZ_Movn;    /*DP_Exceptions <= `EXC_Movn;    */end
+                      `Funct_Movz    : begin DP_Hazards <= `HAZ_Movz;    /*DP_Exceptions <= `EXC_Movz;    */end
+                      `Funct_Mthi    : begin DP_Hazards <= `HAZ_Mthi;    /*DP_Exceptions <= `EXC_Mthi;    */end
+                      `Funct_Mtlo    : begin DP_Hazards <= `HAZ_Mtlo;    /*DP_Exceptions <= `EXC_Mtlo;    */end
+                      `Funct_Mult    : begin DP_Hazards <= `HAZ_Mult;    /*DP_Exceptions <= `EXC_Mult;    */end
+                      `Funct_Multu   : begin DP_Hazards <= `HAZ_Multu;   /*DP_Exceptions <= `EXC_Multu;   */end
+                      `Funct_Nor     : begin DP_Hazards <= `HAZ_Nor;     /*DP_Exceptions <= `EXC_Nor;     */end
+                      `Funct_Or      : begin DP_Hazards <= `HAZ_Or;      /*DP_Exceptions <= `EXC_Or;      */end
+                      `Funct_Sll     : begin DP_Hazards <= `HAZ_Sll;     /*DP_Exceptions <= `EXC_Sll;     */end
+                      `Funct_Sllv    : begin DP_Hazards <= `HAZ_Sllv;    /*DP_Exceptions <= `EXC_Sllv;    */end
+                      `Funct_Slt     : begin DP_Hazards <= `HAZ_Slt;     /*DP_Exceptions <= `EXC_Slt;     */end
+                      `Funct_Sltu    : begin DP_Hazards <= `HAZ_Sltu;    /*DP_Exceptions <= `EXC_Sltu;    */end
+                      `Funct_Sra     : begin DP_Hazards <= `HAZ_Sra;     /*DP_Exceptions <= `EXC_Sra;     */end
+                      `Funct_Srav    : begin DP_Hazards <= `HAZ_Srav;    /*DP_Exceptions <= `EXC_Srav;    */end
+                      `Funct_Srl     : begin DP_Hazards <= `HAZ_Srl;     /*DP_Exceptions <= `EXC_Srl;     */end
+                      `Funct_Srlv    : begin DP_Hazards <= `HAZ_Srlv;    /*DP_Exceptions <= `EXC_Srlv;    */end
+                      `Funct_Sub     : begin DP_Hazards <= `HAZ_Sub;     /*DP_Exceptions <= `EXC_Sub;     */end
+                      `Funct_Subu    : begin DP_Hazards <= `HAZ_Subu;    /*DP_Exceptions <= `EXC_Subu;    */end
+                      `Funct_Syscall : begin DP_Hazards <= `HAZ_Syscall; /*DP_Exceptions <= `EXC_Syscall; */end
+                      `Funct_Teq     : begin DP_Hazards <= `HAZ_Teq;     /*DP_Exceptions <= `EXC_Teq;     */end
+                      `Funct_Tge     : begin DP_Hazards <= `HAZ_Tge;     /*DP_Exceptions <= `EXC_Tge;     */end
+                      `Funct_Tgeu    : begin DP_Hazards <= `HAZ_Tgeu;    /*DP_Exceptions <= `EXC_Tgeu;    */end
+                      `Funct_Tlt     : begin DP_Hazards <= `HAZ_Tlt;     /*DP_Exceptions <= `EXC_Tlt;     */end
+                      `Funct_Tltu    : begin DP_Hazards <= `HAZ_Tltu;    /*DP_Exceptions <= `EXC_Tltu;    */end
+                      `Funct_Tne     : begin DP_Hazards <= `HAZ_Tne;     /*DP_Exceptions <= `EXC_Tne;     */end
+                      `Funct_Xor     : begin DP_Hazards <= `HAZ_Xor;     /*DP_Exceptions <= `EXC_Xor;     */end
+                      default        : begin DP_Hazards <= 8'hxx;        /*DP_Exceptions <= 3'bxxx;       */end
+                  endcase
+              end
+          // R2-Type
+          `Op_Type_R2 :
+              begin
+                  case (Funct)
+                      `Funct_Clo   : begin DP_Hazards <= `HAZ_Clo;   /*DP_Exceptions <= `EXC_Clo;   */end
+                      `Funct_Clz   : begin DP_Hazards <= `HAZ_Clz;   /*DP_Exceptions <= `EXC_Clz;   */end
+                      `Funct_Madd  : begin DP_Hazards <= `HAZ_Madd;  /*DP_Exceptions <= `EXC_Madd;  */end
+                      `Funct_Maddu : begin DP_Hazards <= `HAZ_Maddu; /*DP_Exceptions <= `EXC_Maddu; */end
+                      `Funct_Msub  : begin DP_Hazards <= `HAZ_Msub;  /*DP_Exceptions <= `EXC_Msub;  */end
+                      `Funct_Msubu : begin DP_Hazards <= `HAZ_Msubu; /*DP_Exceptions <= `EXC_Msubu; */end
+                      `Funct_Mul   : begin DP_Hazards <= `HAZ_Mul;   /*DP_Exceptions <= `EXC_Mul;   */end
+                      default      : begin DP_Hazards <= 8'hxx;      /*DP_Exceptions <= 3'bxxx;     */end
+                  endcase
+              end
+          // I-Type
+          `Op_Addi    : begin DP_Hazards <= `HAZ_Addi;  /*DP_Exceptions <= `EXC_Addi;  */end
+          `Op_Addiu   : begin DP_Hazards <= `HAZ_Addiu; /*DP_Exceptions <= `EXC_Addiu; */end
+          `Op_Andi    : begin DP_Hazards <= `HAZ_Andi;  /*DP_Exceptions <= `EXC_Andi;  */end
+          `Op_Ori     : begin DP_Hazards <= `HAZ_Ori;   /*DP_Exceptions <= `EXC_Ori;   */end
+          // `Op_Pref    : begin DP_Hazards <= `HAZ_Pref;  /*DP_Exceptions <= `EXC_Pref;  */end
+          `Op_Slti    : begin DP_Hazards <= `HAZ_Slti;  /*DP_Exceptions <= `EXC_Slti;  */end
+          `Op_Sltiu   : begin DP_Hazards <= `HAZ_Sltiu; /*DP_Exceptions <= `EXC_Sltiu; */end
+          `Op_Xori    : begin DP_Hazards <= `HAZ_Xori;  /*DP_Exceptions <= `EXC_Xori;  */end
+          // Jumps
+          `Op_J       : begin DP_Hazards <= `HAZ_J;     /*DP_Exceptions <= `EXC_J;     */end
+          `Op_Jal     : begin DP_Hazards <= `HAZ_Jal;   /*DP_Exceptions <= `EXC_Jal;   */end
+          // Branches and Traps
+          `Op_Type_BI :
+              begin
+                  case (Rt)
+                      `OpRt_Bgez   : begin DP_Hazards <= `HAZ_Bgez;   /*DP_Exceptions <= `EXC_Bgez;   */end
+                      `OpRt_Bgezal : begin DP_Hazards <= `HAZ_Bgezal; /*DP_Exceptions <= `EXC_Bgezal; */end
+                      `OpRt_Bltz   : begin DP_Hazards <= `HAZ_Bltz;   /*DP_Exceptions <= `EXC_Bltz;   */end
+                      `OpRt_Bltzal : begin DP_Hazards <= `HAZ_Bltzal; /*DP_Exceptions <= `EXC_Bltzal; */end
+                      `OpRt_Teqi   : begin DP_Hazards <= `HAZ_Teqi;   /*DP_Exceptions <= `EXC_Teqi;   */end
+                      `OpRt_Tgei   : begin DP_Hazards <= `HAZ_Tgei;   /*DP_Exceptions <= `EXC_Tgei;   */end
+                      `OpRt_Tgeiu  : begin DP_Hazards <= `HAZ_Tgeiu;  /*DP_Exceptions <= `EXC_Tgeiu;  */end
+                      `OpRt_Tlti   : begin DP_Hazards <= `HAZ_Tlti;   /*DP_Exceptions <= `EXC_Tlti;   */end
+                      `OpRt_Tltiu  : begin DP_Hazards <= `HAZ_Tltiu;  /*DP_Exceptions <= `EXC_Tltiu;  */end
+                      `OpRt_Tnei   : begin DP_Hazards <= `HAZ_Tnei;   /*DP_Exceptions <= `EXC_Tnei;   */end
+                      default      : begin DP_Hazards <= 8'hxx;       /*DP_Exceptions <= 3'bxxx;      */end
+                  endcase
+              end
+          `Op_Beq     : begin DP_Hazards <= `HAZ_Beq;  /*DP_Exceptions <= `EXC_Beq;  */end
+          `Op_Bgtz    : begin DP_Hazards <= `HAZ_Bgtz; /*DP_Exceptions <= `EXC_Bgtz; */end
+          `Op_Blez    : begin DP_Hazards <= `HAZ_Blez; /*DP_Exceptions <= `EXC_Blez; */end
+          `Op_Bne     : begin DP_Hazards <= `HAZ_Bne;  /*DP_Exceptions <= `EXC_Bne;  */end
+          // Coprocessor 0
+          `Op_Type_CP0 :
+              begin
+                  case (Rs)
+                      `OpRs_MF   : begin DP_Hazards <= `HAZ_Mfc0; /*DP_Exceptions <= `EXC_Mfc0; */end
+                      `OpRs_MT   : begin DP_Hazards <= `HAZ_Mtc0; /*DP_Exceptions <= `EXC_Mtc0; */end
+                      `OpRs_ERET : begin DP_Hazards <= (Funct == `Funct_ERET) ? `HAZ_Eret : 8'hxx; /*DP_Exceptions <= `EXC_Eret; */end
+                      default    : begin DP_Hazards <= 8'hxx;     /*DP_Exceptions <= 3'bxxx;    */end
+                  endcase
+              end
+          // Memory
+          `Op_Lb   : begin DP_Hazards <= `HAZ_Lb;  /*DP_Exceptions <= `EXC_Lb;  */end
+          `Op_Lbu  : begin DP_Hazards <= `HAZ_Lbu; /*DP_Exceptions <= `EXC_Lbu; */end
+          `Op_Lh   : begin DP_Hazards <= `HAZ_Lh;  /*DP_Exceptions <= `EXC_Lh;  */end
+          `Op_Lhu  : begin DP_Hazards <= `HAZ_Lhu; /*DP_Exceptions <= `EXC_Lhu; */end
+          `Op_Ll   : begin DP_Hazards <= `HAZ_Ll;  /*DP_Exceptions <= `EXC_Ll;  */end
+          `Op_Lui  : begin DP_Hazards <= `HAZ_Lui; /*DP_Exceptions <= `EXC_Lui; */end
+          `Op_Lw   : begin DP_Hazards <= `HAZ_Lw;  /*DP_Exceptions <= `EXC_Lw;  */end
+          `Op_Lwl  : begin DP_Hazards <= `HAZ_Lwl; /*DP_Exceptions <= `EXC_Lwl; */end
+          `Op_Lwr  : begin DP_Hazards <= `HAZ_Lwr; /*DP_Exceptions <= `EXC_Lwr; */end
+          `Op_Sb   : begin DP_Hazards <= `HAZ_Sb;  /*DP_Exceptions <= `EXC_Sb;  */end
+          `Op_Sc   : begin DP_Hazards <= `HAZ_Sc;  /*DP_Exceptions <= `EXC_Sc;  */end
+          `Op_Sh   : begin DP_Hazards <= `HAZ_Sh;  /*DP_Exceptions <= `EXC_Sh;  */end
+          `Op_Sw   : begin DP_Hazards <= `HAZ_Sw;  /*DP_Exceptions <= `EXC_Sw;  */end
+          `Op_Swl  : begin DP_Hazards <= `HAZ_Swl; /*DP_Exceptions <= `EXC_Swl; */end
+          `Op_Swr  : begin DP_Hazards <= `HAZ_Swr; /*DP_Exceptions <= `EXC_Swr; */end
+          default  : begin DP_Hazards <= 8'hxx;    /*DP_Exceptions <= 3'bxxx;   */end
+      endcase
+  end
+
 
   // ALU Assignment
   always @(*) begin

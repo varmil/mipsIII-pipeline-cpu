@@ -22,10 +22,11 @@ interface intf_ex();
   logic MemtoReg;
 
   // for branch logic
+  logic [4:0] Rs;
   logic [4:0] Rt;
   logic [4:0] Rd;
   logic [4:0] Shamt;
-  logic [4:0] RegDstOut;
+  logic [4:0] RegDstOut; // RtRd, is address for WB register-file address
 
   // data signals
   logic [31:0] ReadData1, ReadData2;
@@ -56,6 +57,7 @@ interface intf_ex();
     output RegWrite,
     output MemtoReg,
 
+    output Rs,
     output Rt,
     output Rd,
     output Shamt,
@@ -86,4 +88,13 @@ interface intf_ex();
     input ReadData2,
     input RegDstOut
   );
+
+
+  modport hazard_controller(
+    input RegDstOut,
+    input Rs,
+    input Rt,
+    input Link
+  );
+
 endinterface

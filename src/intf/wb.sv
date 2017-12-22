@@ -32,4 +32,11 @@ interface intf_wb();
     output RegDstOut,
     output MemReadData
   );
+
+
+  modport hazard_controller(
+    input RegWrite,
+    input RegDstOut
+  );
+
 endinterface

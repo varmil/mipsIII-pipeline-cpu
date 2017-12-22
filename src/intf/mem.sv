@@ -61,4 +61,13 @@ interface intf_mem();
     input RegDstOut,
     input MemReadData
   );
+
+
+  modport hazard_controller(
+    input RegWrite,
+    input RegDstOut,
+    input MemRead,
+    input MemWrite
+  );
+
 endinterface

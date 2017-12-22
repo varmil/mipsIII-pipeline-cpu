@@ -9,6 +9,15 @@
  *   This module is heavily commented. Read below for more information.
  */
 module hazard_controller(
+  input  [7:0] DP_Hazards,
+
+  // intf
+  intf_ex.hazard_controller  EX,
+  intf_mem.hazard_controller MEM,
+  intf_wb.hazard_controller  WB,
+
+
+
   // I-Memory signal for IF_Stall
   input InstrMemReadEnable,
   input InstrMemAck,
@@ -59,11 +68,45 @@ module hazard_controller(
    * When data is needed from the MEM stage by a previous stage (ID or EX), the
    * decision to forward or stall is based on whether MEM is accessing memory
    * (stall) or not (forward). Normally store instructions don't write to registers
-   * and thus are never needed for a data dependence, so the signal 'MEM_MemRead'
+   * and thus are never needed for a data dependence, so the signal 'MEM.MemRead'
    * is sufficient to determine. Because of the Store Conditional instruction,
-   * however, 'MEM_MemWrite' must also be considered because it writes to a register.
+   * however, 'MEM.MemWrite' must also be considered because it writes to a register.
    *
    */
+
+  wire WantRsByID, NeedRsByID, WantRtByID, NeedRtByID, WantRsByEX, NeedRsByEX, WantRtByEX, NeedRtByEX;
+  assign WantRsByID = DP_Hazards[7];
+  assign NeedRsByID = DP_Hazards[6];
+  assign WantRtByID = DP_Hazards[5];
+  assign NeedRtByID = DP_Hazards[4];
+  assign WantRsByEX = DP_Hazards[3];
+  assign NeedRsByEX = DP_Hazards[2];
+  assign WantRtByEX = DP_Hazards[1];
+  assign NeedRtByEX = DP_Hazards[0];
+
+
+  // Forwarding should not happen when the src/dst register is $zero
+  wire EX_RtRd_NZ  = (EX.RegDstOut  != 5'b00000);
+  wire MEM_RtRd_NZ = (MEM.RegDstOut != 5'b00000);
+  wire WB_RtRd_NZ  = (WB.RegDstOut  != 5'b00000);
+
+
+  // EX Dependencies
+  // RegDstOut is destination field
+  wire Rs_EXMEM_Match = (EX.Rs == MEM.RegDstOut) & MEM_RtRd_NZ & (WantRsByEX | NeedRsByEX) & MEM.RegWrite;
+  wire Rt_EXMEM_Match = (EX.Rt == MEM.RegDstOut) & MEM_RtRd_NZ & (WantRtByEX | NeedRtByEX) & MEM.RegWrite;
+  wire Rs_EXWB_Match  = (EX.Rs == WB.RegDstOut)  & WB_RtRd_NZ  & (WantRsByEX | NeedRsByEX) & WB.RegWrite;
+  wire Rt_EXWB_Match  = (EX.Rt == WB.RegDstOut)  & WB_RtRd_NZ  & (WantRtByEX | NeedRtByEX) & WB.RegWrite;
+
+
+  // TODO Forwarding
+  // EX wants data from MEM : Forward if not mem access
+  wire EX_Fwd_1   = (Rs_EXMEM_Match & ~(MEM.MemRead | MEM.MemWrite));
+  wire EX_Fwd_2   = (Rt_EXMEM_Match & ~(MEM.MemRead | MEM.MemWrite));
+  // EX wants/needs data from WB  : Forward
+  wire EX_Fwd_3   = (Rs_EXWB_Match);
+  wire EX_Fwd_4   = (Rt_EXWB_Match);
+
 
   // TODO: Stalls and Control Flow Final Assignments
   assign WB_Stall = M_Stall;
@@ -71,5 +114,12 @@ module hazard_controller(
   assign EX_Stall = /*(EX_Stall_1 | EX_Stall_2 | EX_Exception_Stall) |*/ EX_ALU_Stall | M_Stall;
   assign ID_Stall = /*(ID_Stall_1 | ID_Stall_2 | ID_Stall_3 | ID_Stall_4 | ID_Exception_Stall) |*/ EX_Stall;
   assign IF_Stall = InstrMemReadEnable | InstrMemAck /*| IF_Exception_Stall*/;
+
+
+  // TODO Forwarding
+  // Forwarding Control Final Assignments
+  assign EX_RsFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_1) ? 2'b01 : ((EX_Fwd_3) ? 2'b10 : 2'b00));
+  assign EX_RtFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_2) ? 2'b01 : ((EX_Fwd_4) ? 2'b10 : 2'b00));
+
 
 endmodule
