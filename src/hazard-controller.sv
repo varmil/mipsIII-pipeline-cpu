@@ -116,10 +116,10 @@ module hazard_controller(
   assign IF_Stall = InstrMemReadEnable | InstrMemAck /*| IF_Exception_Stall*/;
 
 
-  // TODO Forwarding
+  // TODO export Forwarding sel wire
   // Forwarding Control Final Assignments
-  assign EX_RsFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_1) ? 2'b01 : ((EX_Fwd_3) ? 2'b10 : 2'b00));
-  assign EX_RtFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_2) ? 2'b01 : ((EX_Fwd_4) ? 2'b10 : 2'b00));
+  assign EX.RsFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_1) ? 2'b01 : ((EX_Fwd_3) ? 2'b10 : 2'b00));
+  assign EX.RtFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_2) ? 2'b01 : ((EX_Fwd_4) ? 2'b10 : 2'b00));
 
 
 endmodule

@@ -19,6 +19,9 @@ interface intf_id();
   logic RegWrite;
   logic MemtoReg;
 
+  // Hazard (Stall and Forwarding)
+  logic [7:0] DP_Hazards;
+
   /*** MIPS Instruction and Components (ID Stage) ***/
   logic [31:0] Instruction;
   wire  [5:0]  OpCode = Instruction[31:26];
@@ -95,10 +98,9 @@ interface intf_id();
     input  MemtoReg,
     // input  ID_ReverseEndian,
 
-    // Hazard & Forwarding
+    // Exception Control/Info
     input  Rs,
     input  Rt,
-    // Exception Control/Info
     // input  ID_KernelMode,
     // input  ID_RestartPC,
     // input  ID_IsBDS,
@@ -106,7 +108,9 @@ interface intf_id();
     // Data Signals
     input  ReadData1,
     input  ReadData2,
-    input  ExtImmOut
+    input  ExtImmOut,
+    // Hazard (Stall and Forwarding)
+    input DP_Hazards
   );
 
   // IF_Flush and DP_Hazards are the rest wire

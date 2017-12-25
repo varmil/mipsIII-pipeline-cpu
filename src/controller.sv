@@ -180,11 +180,11 @@ module controller (
 
   // Set the Hazard Control Signals and Exception Indicators based on the Op Code
   always @(*) begin
-      case (OpCode)
+      case (ID.OpCode)
           // R-Type
           `Op_Type_R  :
               begin
-                  case (Funct)
+                  case (ID.Funct)
                       `Funct_Add     : begin DP_Hazards <= `HAZ_Add;     /*DP_Exceptions <= `EXC_Add;     */end
                       `Funct_Addu    : begin DP_Hazards <= `HAZ_Addu;    /*DP_Exceptions <= `EXC_Addu;    */end
                       `Funct_And     : begin DP_Hazards <= `HAZ_And;     /*DP_Exceptions <= `EXC_And;     */end
@@ -227,7 +227,7 @@ module controller (
           // R2-Type
           `Op_Type_R2 :
               begin
-                  case (Funct)
+                  case (ID.Funct)
                       `Funct_Clo   : begin DP_Hazards <= `HAZ_Clo;   /*DP_Exceptions <= `EXC_Clo;   */end
                       `Funct_Clz   : begin DP_Hazards <= `HAZ_Clz;   /*DP_Exceptions <= `EXC_Clz;   */end
                       `Funct_Madd  : begin DP_Hazards <= `HAZ_Madd;  /*DP_Exceptions <= `EXC_Madd;  */end
@@ -253,7 +253,7 @@ module controller (
           // Branches and Traps
           `Op_Type_BI :
               begin
-                  case (Rt)
+                  case (ID.Rt)
                       `OpRt_Bgez   : begin DP_Hazards <= `HAZ_Bgez;   /*DP_Exceptions <= `EXC_Bgez;   */end
                       `OpRt_Bgezal : begin DP_Hazards <= `HAZ_Bgezal; /*DP_Exceptions <= `EXC_Bgezal; */end
                       `OpRt_Bltz   : begin DP_Hazards <= `HAZ_Bltz;   /*DP_Exceptions <= `EXC_Bltz;   */end
@@ -274,10 +274,10 @@ module controller (
           // Coprocessor 0
           `Op_Type_CP0 :
               begin
-                  case (Rs)
+                  case (ID.Rs)
                       `OpRs_MF   : begin DP_Hazards <= `HAZ_Mfc0; /*DP_Exceptions <= `EXC_Mfc0; */end
                       `OpRs_MT   : begin DP_Hazards <= `HAZ_Mtc0; /*DP_Exceptions <= `EXC_Mtc0; */end
-                      `OpRs_ERET : begin DP_Hazards <= (Funct == `Funct_ERET) ? `HAZ_Eret : 8'hxx; /*DP_Exceptions <= `EXC_Eret; */end
+                      `OpRs_ERET : begin DP_Hazards <= (ID.Funct == `Funct_ERET) ? `HAZ_Eret : 8'hxx; /*DP_Exceptions <= `EXC_Eret; */end
                       default    : begin DP_Hazards <= 8'hxx;     /*DP_Exceptions <= 3'bxxx;    */end
                   endcase
               end

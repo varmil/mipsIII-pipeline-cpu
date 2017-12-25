@@ -28,6 +28,12 @@ interface intf_ex();
   logic [4:0] Shamt;
   logic [4:0] RegDstOut; // RtRd, is address for WB register-file address
 
+  // Hazard (Stall and Forwarding)
+  logic WantRsByEX;
+  logic NeedRsByEX;
+  logic WantRtByEX;
+  logic NeedRtByEX;
+
   // data signals
   logic [31:0] ReadData1, ReadData2;
   logic [31:0] ExtImmOut;
@@ -37,6 +43,10 @@ interface intf_ex();
   logic [31:0] ALUSrcOut;
   logic ALUStall;
   logic ExcOv;
+  logic [1:0] RsFwdSel;
+  logic [1:0] RtFwdSel;
+  logic [31:0] RsFwdOut;
+  logic [31:0] RtFwdLinkOut;
 
   modport idex_out(
     input Stall,
@@ -65,7 +75,12 @@ interface intf_ex();
     // Data Signals
     output ReadData1,
     output ReadData2,
-    output ExtImmOut
+    output ExtImmOut,
+    // Hazard (Stall and Forwarding)
+    output WantRsByEX,
+    output NeedRsByEX,
+    output WantRtByEX,
+    output NeedRtByEX
   );
 
   modport exmem_in(
@@ -94,7 +109,10 @@ interface intf_ex();
     input RegDstOut,
     input Rs,
     input Rt,
-    input Link
+    input Link,
+
+    output RsFwdSel,
+    output RtFwdSel
   );
 
 endinterface

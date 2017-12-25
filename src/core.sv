@@ -45,8 +45,8 @@ module core (
   /*** Write Back Signals ***/
   intf_wb WB();
 
-  /*** TODO Other Signals ***/
-  wire [7:0] ID_DP_Hazards, HAZ_DP_Hazards;
+  /*** Other Signals ***/
+  wire [7:0] HAZ_DP_Hazards = {ID.DP_Hazards[7:4], EX.WantRsByEX, EX.NeedRsByEX, EX.WantRtByEX, EX.NeedRtByEX};
 
   // External Memory Interface
   // * IReadMask stays 0 while accessing I-Memory and until finished it (== ACK coming)
@@ -85,7 +85,7 @@ module core (
     EX.Stall,
     EX.ALUOp,
     EX.Shamt,
-    EX.ReadData1, EX.ALUSrcOut, // A, B
+    EX.RsFwdOut, EX.ALUSrcOut, // TODO A, B
     // output
     EX.ALUResult,
     EX.ExcOv,
@@ -94,7 +94,7 @@ module core (
   controller controller(
     .ID         (ID.controller),
     .IF_Flush   (IF.Flush),
-    .DP_Hazards (ID_DP_Hazards)
+    .DP_Hazards (ID.DP_Hazards)
   );
   /*** TODO: Hazard and Forward Control Unit ***/
   hazard_controller hazard_controller(
@@ -186,11 +186,6 @@ module core (
     .RST               (RST),
     .ID                (ID.idex_in),
     .EX                (EX.idex_out)
-    // Hazard & Forwarding
-    // .ID_WantRsByEX     (ID_DP_Hazards[3]),
-    // .ID_NeedRsByEX     (ID_DP_Hazards[2]),
-    // .ID_WantRtByEX     (ID_DP_Hazards[1]),
-    // .ID_NeedRtByEX     (ID_DP_Hazards[0])
   );
   /*** Execute -> Memory Pipeline Stage ***/
   exmem_stage exmem_stage (
@@ -213,7 +208,7 @@ module core (
   ***/
   mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
   mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
-  mux2 #(32) alu_src(/*TODO use out of EXRtFwdLnk*/EX_ReadData2_Fwd, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
+  mux2 #(32) alu_src(EX.RtFwdLinkOut, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
   mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
 
   adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
@@ -228,22 +223,22 @@ module core (
   ***/
   /*** EX Rs Forwarding ***/
   mux4 #(32) EXRsFwd (
-    .sel  (EX_RsFwdSel),
-    .in0  (EX.ReadData1),
-    .in1  (MEM.ALUResult),
-    .in2  (WB.MemtoRegOut),
-    .in3  (32'h0000_0000), // TODO: EX_RestartPC for LINK
-    .out  (EX_ReadData1_Fwd)
+    .selector  (EX.RsFwdSel),
+    .a         (EX.ReadData1),
+    .b         (MEM.ALUResult),
+    .c         (WB.MemtoRegOut),
+    .d         (32'h0000_0000), // TODO: EX_RestartPC for LINK
+    .out       (EX.RsFwdOut)
   );
 
   /*** EX Rt Forwarding / Link Mux ***/
-  mux4 #(32) EXRtFwdLnk (
-    .sel  (EX_RtFwdSel),
-    .in0  (EX.ReadData2),
-    .in1  (MEM.ALUResult),
-    .in2  (WB.MemtoRegOut),
-    .in3  (32'h00000008),
-    .out  (EX_ReadData2_Fwd)
+  mux4 #(32) EXRtFwdLink (
+    .selector  (EX.RtFwdSel),
+    .a         (EX.ReadData2),
+    .b         (MEM.ALUResult),
+    .c         (WB.MemtoRegOut),
+    .d         (32'h00000008),
+    .out       (EX.RtFwdLinkOut)
   );
 
 endmodule

@@ -42,10 +42,12 @@ module idex_stage(
     EX.ExtImmOut      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ExtImmOut                                     : ID.ExtImmOut);
     EX.Rs             <= (RST) ? 5'b0  : ((EX.Stall) ? EX.Rs                                            : ID.Rs);
     EX.Rt             <= (RST) ? 5'b0  : ((EX.Stall) ? EX.Rt                                            : ID.Rt);
-    // EX_WantRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_WantRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_WantRsByEX));
-    // EX_NeedRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_NeedRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_NeedRsByEX));
-    // EX_WantRtByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_WantRtByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_WantRtByEX));
-    // EX_NeedRtByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_NeedRtByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID_NeedRtByEX));
+
+    // Hazard (Stall and Forwarding)
+    EX.WantRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX.WantRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID.DP_Hazards[3]));
+    EX.NeedRsByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX.NeedRsByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID.DP_Hazards[2]));
+    EX.WantRtByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX.WantRtByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID.DP_Hazards[1]));
+    EX.NeedRtByEX     <= (RST) ? 1'b0  : ((EX.Stall) ? EX.NeedRtByEX    : ((ID.Stall | ID.Flush) ? 1'b0 : ID.DP_Hazards[0]));
     // EX_KernelMode     <= (RST) ? 1'b0  : ((EX.Stall) ? EX_KernelMode                                    : ID_KernelMode);
   end
 
