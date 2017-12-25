@@ -1,5 +1,4 @@
-# mips32-single-cycle-cpu
-the 32bit CPU which has MIPS architecture (single cycle processor)
+# mipsIII-pipeline-cpu
 
 
 ## TODO
