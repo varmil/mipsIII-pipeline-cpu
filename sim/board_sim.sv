@@ -15,7 +15,7 @@ module board_sim;
 
     #5;
 
-    #1000 $finish;
+    #2000 $finish;
   end
 
   initial begin
