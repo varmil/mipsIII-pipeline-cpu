@@ -208,16 +208,27 @@ module core (
   /***
    common modules
   ***/
+  // IF
   mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1_End, ID.PCSrc, IF.PCSrcOut);
-  mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
-  mux2 #(32) alu_src(EX.RtFwdLinkOut, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
-  mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
-
   adder #(32) pc_plus4(IF.PCOut, `PCIncrAmt, IF.PCAdd4);
-  adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);
 
+  // ID
+  adder #(32) pc_branch(ID.PCAdd4, ID.SL2OutForPCBranch, ID.PCBranchOut);
   sign_or_zero_extender ext_imm(ID.Immediate, ID.SignExtend, ID.ExtImmOut);
   sl2 sl2_for_pc_branch(ID.ExtImmOut, ID.SL2OutForPCBranch);
+
+  // EX
+  mux2 #(32) alu_src(EX.RtFwdLinkOut, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
+  mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
+  /* TODO to mux4 */
+  mux4 #(5)  link_reg_dst(
+    EX.Rt,
+    EX.Rd,
+    5'b11111,
+    5'bxxxxx,
+    EX.LinkRegDst,
+    EX.RegDstOut
+  );
 
 
   /***
@@ -242,6 +253,7 @@ module core (
     .d         (32'h0000_0000), // TODO: CP0_RegOut
     .out       (ID.ReadData2_End)
   );
+
   /*** EX Rs Forwarding ***/
   mux4 #(32) EXRsFwd (
     .selector  (EX.RsFwdSel),
@@ -261,6 +273,7 @@ module core (
     .d         (32'h00000008),
     .out       (EX.RtFwdLinkOut)
   );
+
   /*** MEM Write Data Mux ***/
   mux2 #(32) MEMWriteDataFwd (
    .selector  (MEM.WriteDataFwdSel),

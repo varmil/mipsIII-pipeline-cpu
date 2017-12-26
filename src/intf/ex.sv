@@ -43,6 +43,7 @@ interface intf_ex();
   logic [31:0] ALUSrcOut;
   logic ALUStall;
   logic ExcOv;
+  logic [1:0] LinkRegDst;
   logic [1:0] RsFwdSel;
   logic [1:0] RtFwdSel;
   logic [31:0] RsFwdOut;
@@ -67,6 +68,7 @@ interface intf_ex();
     output RegWrite,
     output MemtoReg,
 
+    output LinkRegDst,
     output Rs,
     output Rt,
     output Rd,

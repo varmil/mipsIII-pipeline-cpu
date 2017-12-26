@@ -4,8 +4,8 @@ module idex_stage(
   intf_ex.idex_out EX
 );
 
-  // reg EX_RegDst;
-  // assign EX_LinkRegDst = (EX_Link) ? 2'b10 : ((EX_RegDst) ? 2'b01 : 2'b00);
+  // for LINK op
+  assign EX.LinkRegDst = (EX.Link) ? 2'b10 : ((EX.RegDst) ? 2'b01 : 2'b00);
 
   // NOTE: why is this needed ?
   // reg [16:0] EX_SignExtImm_pre;
