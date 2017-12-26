@@ -85,7 +85,7 @@ module core (
     EX.Stall,
     EX.ALUOp,
     EX.Shamt,
-    EX.RsFwdOut, EX.ALUSrcOut, // TODO A, B
+    EX.RsFwdOut, EX.ALUSrcOut, // A, B
     // output
     EX.ALUResult,
     EX.ExcOv,
@@ -161,6 +161,7 @@ module core (
     // .EXC_AdEL      (M_EXC_AdEL),
     // .EXC_AdES      (M_EXC_AdES)
   );
+  // TODO: implement
   cp0 cp0(
     // input
     // output
@@ -267,6 +268,5 @@ module core (
    .b         (WB.MemtoRegOut),
    .out       (MEM.WriteDataPre)
   );
-
 
 endmodule

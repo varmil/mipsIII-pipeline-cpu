@@ -9,8 +9,6 @@ module idex_stage(
 
   // NOTE: why is this needed ?
   // reg [16:0] EX_SignExtImm_pre;
-  // assign EX_Rd = EX_SignExtImm[15:11];
-  // assign EX_Shamt = EX_SignExtImm[10:6];
   // assign EX_SignExtImm = (EX_SignExtImm_pre[16]) ? {15'h7fff, EX_SignExtImm_pre[16:0]} : {15'h0000, EX_SignExtImm_pre[16:0]};
   assign EX.Rd = EX.ExtImmOut[15:11];
   assign EX.Shamt = EX.ExtImmOut[10:6];
