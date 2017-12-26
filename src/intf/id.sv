@@ -34,7 +34,6 @@ interface intf_id();
   wire  [2:0]  Cp0_Sel = Instruction[2:0];
 
   // logic ID_Exception_Stall;
-  // logic [1:0] ID_RsFwdSel, ID_RtFwdSel;
   // logic ID_NextIsDelay;
   // logic ID_CanErr, ID_ID_CanErr, ID_EX_CanErr, ID_M_CanErr;
   // logic ID_KernelMode;
@@ -50,16 +49,16 @@ interface intf_id();
   // Compare
   logic CmpEQ, CmpGZ, CmpLZ, CmpGEZ, CmpLEZ;
 
-  // TODO: Implement for Hazard, now simply using ReadData
-  // logic [31:0] ID_ReadData1_RF, ID_ReadData1_End;
-  // logic [31:0] ID_ReadData2_RF, ID_ReadData2_End;
-  logic [31:0] ReadData1, ReadData2;
+  logic [31:0] ReadData1_RF, ReadData1_End;
+  logic [31:0] ReadData2_RF, ReadData2_End;
 
   // core internal wire
   logic [31:0] PCAdd4;
   logic [31:0] SL2OutForPCBranch;
   logic [31:0] PCBranchOut;
   wire  [31:0] PCJumpAddress = {PCAdd4[31:28], JumpAddress[25:0], 2'b00};
+  logic [1:0] RsFwdSel;
+  logic [1:0] RtFwdSel;
 
   // wire init
   logic [31:0] ExtImmOut; // ID_Rd, ID_Shamt included here
@@ -106,8 +105,8 @@ interface intf_id();
     // input  ID_IsBDS,
 
     // Data Signals
-    input  ReadData1,
-    input  ReadData2,
+    input  ReadData1_End,
+    input  ReadData2_End,
     input  ExtImmOut,
     // Hazard (Stall and Forwarding)
     input DP_Hazards
@@ -157,6 +156,16 @@ interface intf_id();
     //  output ID_M_CanErr,
     //  output ID_NextIsDelay,
     output ALUOp
+  );
+
+
+  modport hazard_controller(
+    input Rs,
+    input Rt,
+    input Mfc0,
+
+    output RsFwdSel,
+    output RtFwdSel
   );
 
 endinterface

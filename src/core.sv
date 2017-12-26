@@ -77,7 +77,7 @@ module core (
     // write data
     WB.MemtoRegOut,
     // read data
-    ID.ReadData1, ID.ReadData2
+    ID.ReadData1_RF, ID.ReadData2_RF
   );
   alu alu(
     // input
@@ -101,6 +101,7 @@ module core (
     .DP_Hazards          (HAZ_DP_Hazards),
 
     /*** interface ***/
+    .ID                  (ID.hazard_controller),
     .EX                  (EX.hazard_controller),
     .MEM                 (MEM.hazard_controller),
     .WB                  (WB.hazard_controller),
@@ -124,8 +125,8 @@ module core (
   );
   /*** Condition Compare Unit ***/
   Compare Compare (
-    .A    (ID.ReadData1),
-    .B    (ID.ReadData2),
+    .A    (ID.ReadData1_End),
+    .B    (ID.ReadData2_End),
     .EQ   (ID.CmpEQ),
     .GZ   (ID.CmpGZ),
     .LZ   (ID.CmpLZ),
@@ -206,7 +207,7 @@ module core (
   /***
    common modules
   ***/
-  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1, ID.PCSrc, IF.PCSrcOut);
+  mux4 #(32) pc_src(IF.PCAdd4, ID.PCJumpAddress, ID.PCBranchOut, ID.ReadData1_End, ID.PCSrc, IF.PCSrcOut);
   mux2 #(5)  reg_dst(EX.Rt, EX.Rd, EX.RegDst, EX.RegDstOut);
   mux2 #(32) alu_src(EX.RtFwdLinkOut, EX.ExtImmOut, EX.ALUSrcImm, EX.ALUSrcOut);
   mux2 #(32) mem_to_reg(WB.ALUResult, WB.MemReadData, WB.MemtoReg, WB.MemtoRegOut);
@@ -221,6 +222,25 @@ module core (
   /***
    Forwarding modules
   ***/
+  /*** ID Rs Forwarding/Link Mux ***/
+  mux4 #(32) IDRsFwd (
+    .selector  (ID.RsFwdSel),
+    .a         (ID.ReadData1_RF),
+    .b         (MEM.ALUResult),
+    .c         (WB.MemtoRegOut),
+    .d         (32'hxxxxxxxx),
+    .out       (ID.ReadData1_End)
+  );
+
+  /*** ID Rt Forwarding/CP0 Mfc0 Mux ***/
+  mux4 #(32) IDRtFwd (
+    .selector  (ID.RtFwdSel),
+    .a         (ID.ReadData2_RF),
+    .b         (MEM.ALUResult),
+    .c         (WB.MemtoRegOut),
+    .d         (32'h0000_0000), // TODO: CP0_RegOut
+    .out       (ID.ReadData2_End)
+  );
   /*** EX Rs Forwarding ***/
   mux4 #(32) EXRsFwd (
     .selector  (EX.RsFwdSel),

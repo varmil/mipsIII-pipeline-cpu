@@ -106,6 +106,7 @@ interface intf_ex();
 
 
   modport hazard_controller(
+    input RegWrite,
     input RegDstOut,
     input Rs,
     input Rt,

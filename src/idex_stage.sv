@@ -37,8 +37,8 @@ module idex_stage(
     // EX_IsBDS          <= (RST) ? 1'b0  : ((EX.Stall) ? EX_IsBDS                                         : ID_IsBDS);
     // EX_EX_CanErr      <= (RST) ? 1'b0  : ((EX.Stall) ? EX_EX_CanErr     : ((ID.Stall | ID.Flush) ? 1'b0 : ID_EX_CanErr));
     // EX_M_CanErr       <= (RST) ? 1'b0  : ((EX.Stall) ? EX_M_CanErr      : ((ID.Stall | ID.Flush) ? 1'b0 : ID_M_CanErr));
-    EX.ReadData1      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData1                                     : ID.ReadData1);
-    EX.ReadData2      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData2                                     : ID.ReadData2);
+    EX.ReadData1      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData1                                     : ID.ReadData1_End);
+    EX.ReadData2      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData2                                     : ID.ReadData2_End);
     EX.ExtImmOut      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ExtImmOut                                     : ID.ExtImmOut);
     EX.Rs             <= (RST) ? 5'b0  : ((EX.Stall) ? EX.Rs                                            : ID.Rs);
     EX.Rt             <= (RST) ? 5'b0  : ((EX.Stall) ? EX.Rt                                            : ID.Rt);
