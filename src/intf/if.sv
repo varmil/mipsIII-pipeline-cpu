@@ -10,6 +10,9 @@ interface intf_if();
   logic [31:0] Instruction;
   logic [31:0] PCAdd4;
 
+  // PC for LINK
+  logic IsBDS;
+
   // internal wire
   logic [31:0] PCSrcOut;
   logic [31:0] PCOut;
@@ -20,9 +23,9 @@ interface intf_if();
     input  ExceptionFlush,
     input  Stall,
 
-    // Control Signals
     input  Instruction,
-    // Data Signals
-    input  PCAdd4
+    input  PCAdd4,
+    input  IsBDS,
+    input  PCOut
   );
 endinterface

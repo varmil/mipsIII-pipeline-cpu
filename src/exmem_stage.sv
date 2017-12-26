@@ -19,8 +19,10 @@ module exmem_stage(
 
     // M_ReverseEndian <= (RST) ? 1'b0  : ((MEM.Stall) ? M_ReverseEndian                                 : EX_ReverseEndian);
     // M_KernelMode    <= (RST) ? 1'b0  : ((MEM.Stall) ? M_KernelMode                                    : EX_KernelMode);
-    // M_RestartPC     <= (RST) ? 32'b0 : ((MEM.Stall) ? M_RestartPC                                     : EX_RestartPC);
-    // M_IsBDS         <= (RST) ? 1'b0  : ((MEM.Stall) ? M_IsBDS                                         : EX_IsBDS);
+
+    MEM.IsBDS         <= (RST) ? 1'b0  : ((MEM.Stall) ? MEM.IsBDS                                         : EX.IsBDS);
+    MEM.RestartPC     <= (RST) ? 32'b0 : ((MEM.Stall) ? MEM.RestartPC                                     : EX.RestartPC);
+
     // M_M_CanErr      <= (RST) ? 1'b0  : ((MEM.Stall) ? M_M_CanErr      : ((EX.Stall | EX.Flush) ? 1'b0 : EX_M_CanErr));
     MEM.ALUResult     <= (RST) ? 32'b0 : ((MEM.Stall) ? MEM.ALUResult                                   : EX.ALUResult);
     MEM.ReadData2     <= (RST) ? 32'b0 : ((MEM.Stall) ? MEM.ReadData2                                   : EX.ReadData2);

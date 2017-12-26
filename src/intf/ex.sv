@@ -21,6 +21,10 @@ interface intf_ex();
   logic RegWrite;
   logic MemtoReg;
 
+  // PC for LINK
+  logic IsBDS;
+  logic [31:0] RestartPC;
+
   // for branch logic
   logic [4:0] Rs;
   logic [4:0] Rt;
@@ -68,6 +72,9 @@ interface intf_ex();
     output RegWrite,
     output MemtoReg,
 
+    output IsBDS,
+    output RestartPC,
+
     output LinkRegDst,
     output Rs,
     output Rt,
@@ -100,6 +107,10 @@ interface intf_ex();
     input MemSignExtend,
     input RegWrite,
     input MemtoReg,
+
+    input IsBDS,
+    input RestartPC,
+
     // data
     input ALUResult,
     input ReadData2,

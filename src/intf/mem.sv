@@ -20,6 +20,9 @@ interface intf_mem();
 
   // EX- MEM
   logic [31:0] ReadData2;
+  // PC for LINK
+  logic IsBDS;
+  logic [31:0] RestartPC;
 
   // EX - MEM - WB
   logic [31:0] ALUResult;
@@ -46,6 +49,9 @@ interface intf_mem();
     output MemSignExtend,
     output RegWrite,
     output MemtoReg,
+
+    output IsBDS,
+    output RestartPC,
 
     output ALUResult,
     output ReadData2,

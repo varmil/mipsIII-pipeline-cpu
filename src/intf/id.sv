@@ -18,7 +18,9 @@ interface intf_id();
   logic MemRead, MemWrite, MemHalf, MemByte, MemSignExtend;
   logic RegWrite;
   logic MemtoReg;
-
+  // PC for LINK
+  logic IsBDS;
+  logic [31:0] RestartPC;
   // Hazard (Stall and Forwarding)
   logic [7:0] DP_Hazards;
 
@@ -42,7 +44,6 @@ interface intf_id();
   // logic ID_PCSrc_Exc;
   // logic [31:0] ID_ExceptionPC;
   // logic [31:0] CP0_RegOut;
-  // logic [31:0] ID_RestartPC;
   // logic ID_IsBDS;
   // logic ID_IsFlushed;
 
@@ -72,7 +73,9 @@ interface intf_id();
     input  Stall,
 
     output Instruction,
-    output PCAdd4
+    output PCAdd4,
+    output IsBDS,
+    output RestartPC
   );
 
   // idex_stage
@@ -97,12 +100,13 @@ interface intf_id();
     input  MemtoReg,
     // input  ID_ReverseEndian,
 
+    input IsBDS,
+    input RestartPC,
+
     // Exception Control/Info
     input  Rs,
     input  Rt,
     // input  ID_KernelMode,
-    // input  ID_RestartPC,
-    // input  ID_IsBDS,
 
     // Data Signals
     input  ReadData1_End,

@@ -31,8 +31,10 @@ module idex_stage(
     EX.MemtoReg       <= (RST) ? 1'b0  : ((EX.Stall) ? EX.MemtoReg                                      : ID.MemtoReg);
 
     // EX_ReverseEndian  <= (RST) ? 1'b0  : ((EX.Stall) ? EX_ReverseEndian                                 : ID_ReverseEndian);
-    // EX_RestartPC      <= (RST) ? 32'b0 : ((EX.Stall) ? EX_RestartPC                                     : ID_RestartPC);
-    // EX_IsBDS          <= (RST) ? 1'b0  : ((EX.Stall) ? EX_IsBDS                                         : ID_IsBDS);
+
+    EX.IsBDS          <= (RST) ? 1'b0  : ((EX.Stall) ? EX.IsBDS                                         : ID.IsBDS);
+    EX.RestartPC      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.RestartPC                                     : ID.RestartPC);
+
     // EX_EX_CanErr      <= (RST) ? 1'b0  : ((EX.Stall) ? EX_EX_CanErr     : ((ID.Stall | ID.Flush) ? 1'b0 : ID_EX_CanErr));
     // EX_M_CanErr       <= (RST) ? 1'b0  : ((EX.Stall) ? EX_M_CanErr      : ((ID.Stall | ID.Flush) ? 1'b0 : ID_M_CanErr));
     EX.ReadData1      <= (RST) ? 32'b0 : ((EX.Stall) ? EX.ReadData1                                     : ID.ReadData1_End);

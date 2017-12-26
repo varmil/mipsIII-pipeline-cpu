@@ -260,7 +260,7 @@ module core (
     .a         (EX.ReadData1),
     .b         (MEM.ALUResult),
     .c         (WB.MemtoRegOut),
-    .d         (32'h0000_0000), // TODO: EX_RestartPC for LINK
+    .d         (EX.RestartPC), // for LINK
     .out       (EX.RsFwdOut)
   );
 
@@ -270,7 +270,7 @@ module core (
     .a         (EX.ReadData2),
     .b         (MEM.ALUResult),
     .c         (WB.MemtoRegOut),
-    .d         (32'h00000008),
+    .d         (32'h00000008), // for LINK
     .out       (EX.RtFwdLinkOut)
   );
 
