@@ -3,7 +3,7 @@ main:
 	# ALU followed by ALU
 	lui $2, 0xffff
 	ori $2, $2, 0xffff
-	add $3, $0, $2
+	addi $3, $0, 2
 	mult $3, $2
 	# ALU followed by hi/lo
 	mfhi $4

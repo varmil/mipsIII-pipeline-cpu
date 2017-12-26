@@ -16,7 +16,7 @@ module instruction_memory #(parameter WIDTH = 32) (
 
   initial begin
     // $readmemh("src/memfile.dat", RAM);
-    $readmemh("testcase/arithmetic/arithmetic.data", RAM);
+    $readmemh("testcase/dependency/dependency.data", RAM);
   end
 
   // ACK (NOTE: Ack after 1 cycle because R/W operation is completed immediately)
