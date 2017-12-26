@@ -85,6 +85,9 @@ module hazard_controller(
   assign WantRtByEX = DP_Hazards[1];
   assign NeedRtByEX = DP_Hazards[0];
 
+  // Trick allowed by RegDst = 0 which gives Rt. MEM_Rt is only used on
+  // Data Memory write operations (stores), and RegWrite is always 0 in this case.
+  wire [4:0] MEM_Rt = MEM.RegDstOut;
 
   // Forwarding should not happen when the src/dst register is $zero
   wire EX_RtRd_NZ  = (EX.RegDstOut  != 5'b00000);
@@ -105,6 +108,8 @@ module hazard_controller(
   wire Rt_EXMEM_Match = (EX.Rt == MEM.RegDstOut) & MEM_RtRd_NZ & (WantRtByEX | NeedRtByEX) & MEM.RegWrite;
   wire Rs_EXWB_Match  = (EX.Rs == WB.RegDstOut)  & WB_RtRd_NZ  & (WantRsByEX | NeedRsByEX) & WB.RegWrite;
   wire Rt_EXWB_Match  = (EX.Rt == WB.RegDstOut)  & WB_RtRd_NZ  & (WantRtByEX | NeedRtByEX) & WB.RegWrite;
+  // MEM Dependencies
+  wire Rt_MEMWB_Match = (MEM_Rt == WB.RegDstOut) & WB_RtRd_NZ  & WB.RegWrite;
 
 
   // ID needs data from EX  : Stall
@@ -128,6 +133,8 @@ module hazard_controller(
   // EX wants/needs data from WB  : Forward
   wire EX_Fwd_3   = (Rs_EXWB_Match);
   wire EX_Fwd_4   = (Rt_EXWB_Match);
+  // MEM needs data from WB : Forward
+  wire MEM_Fwd_1  = (Rt_MEMWB_Match);
 
 
   // TODO: Stalls and Control Flow Final Assignments
@@ -144,6 +151,6 @@ module hazard_controller(
   assign ID.RtFwdSel = (ID.Mfc0) ? 2'b11 : ((ID_Fwd_2) ? 2'b01 : ((ID_Fwd_4) ? 2'b10 : 2'b00));
   assign EX.RsFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_1) ? 2'b01 : ((EX_Fwd_3) ? 2'b10 : 2'b00));
   assign EX.RtFwdSel = (EX.Link) ? 2'b11 : ((EX_Fwd_2) ? 2'b01 : ((EX_Fwd_4) ? 2'b10 : 2'b00));
-
+  assign MEM.WriteDataFwdSel = MEM_Fwd_1;
 
 endmodule

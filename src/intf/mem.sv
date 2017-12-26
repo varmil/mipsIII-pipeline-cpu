@@ -28,6 +28,9 @@ interface intf_mem();
   // .MEM - WB
   logic [31:0] MemReadData;
 
+  // internal wire
+  logic [31:0] WriteDataPre;
+  logic WriteDataFwdSel;
 
   modport exmem_out(
     input Stall,
@@ -67,7 +70,9 @@ interface intf_mem();
     input RegWrite,
     input RegDstOut,
     input MemRead,
-    input MemWrite
+    input MemWrite,
+
+    output WriteDataFwdSel
   );
 
 endinterface

@@ -137,7 +137,7 @@ module core (
   memory_controller d_memory_controller (
     .CLK           (CLK),
     .RST           (RST),
-    .DataIn        (MEM.ReadData2),
+    .DataIn        (MEM.WriteDataPre),
     .Address       (MEM.ALUResult),
     .MReadData     (ReadDataOriginal),
     .MemRead       (MEM.MemRead),
@@ -260,5 +260,13 @@ module core (
     .d         (32'h00000008),
     .out       (EX.RtFwdLinkOut)
   );
+  /*** MEM Write Data Mux ***/
+  mux2 #(32) MEMWriteDataFwd (
+   .selector  (MEM.WriteDataFwdSel),
+   .a         (MEM.ReadData2),
+   .b         (WB.MemtoRegOut),
+   .out       (MEM.WriteDataPre)
+  );
+
 
 endmodule
