@@ -1,5 +1,18 @@
 # mipsIII-pipeline-cpu
 
+## How to create testcase
+
+```sh
+# ex) hello.c
+mipsel-sde-elf-gcc -mips3 -c hello.c
+mipsel-sde-elf-objcopy -j .text -O binary hello.o hello.bin
+
+# show assembly
+mipsel-sde-elf-objdump -d hello.o
+
+# show machine instructions which are loadable with ModelSim
+od -An -tx4 -w4 hello.bin | tr -d ' '
+```
 
 ## TODO
 * 5-stage pipeline
