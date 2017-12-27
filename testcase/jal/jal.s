@@ -1,4 +1,5 @@
 00000000 <main>:
+   -:	27bd0080 	addiu	sp,sp,128
    0:	27bdffd8 	addiu	sp,sp,-40
    4:	afbf0024 	sw	ra,36(sp)
    8:	afbe0020 	sw	s8,32(sp)
